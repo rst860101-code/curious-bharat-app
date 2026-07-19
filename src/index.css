@@ -10,7 +10,11 @@
    CURIOSITY SKY PREMIUM LIGHT THEME
    ========================================================== */
 body.light {
-  background-color: #EAF5F5 !important;
+  background-color: #F4FAF9 !important;
+  background-image: 
+    radial-gradient(at 10% 12%, rgba(0, 181, 188, 0.07) 0px, transparent 40%),
+    radial-gradient(at 90% 88%, rgba(0, 181, 188, 0.04) 0px, transparent 45%) !important;
+  background-attachment: fixed !important;
   color: #0E1F22 !important;
 }
 
@@ -37,8 +41,8 @@ body.light .bg-zinc-950\/70,
 body.light .bg-zinc-900\/30 {
   background-color: #FFFFFF !important;
   color: #0E1F22 !important;
-  border-color: #D4E9E8 !important;
-  box-shadow: 0 4px 20px -2px rgba(0, 181, 188, 0.04), 0 2px 6px -1px rgba(0, 181, 188, 0.02) !important;
+  border-color: #DDEBEB !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 181, 188, 0.05), 0 4px 12px -2px rgba(0, 181, 188, 0.02) !important;
 }
 
 /* Subtle surfaces - premium clean sky-tinted white */
@@ -48,7 +52,7 @@ body.light .bg-slate-100,
 body.light .bg-zinc-800,
 body.light .bg-zinc-850,
 body.light .bg-zinc-900/10 {
-  background-color: #F1FAF9 !important;
+  background-color: #F0F7F6 !important;
   color: #0E1F22 !important;
 }
 
@@ -124,17 +128,33 @@ body.light .border-b {
   border-color: #CDE5E4 !important;
 }
 
-/* High Legibility text overrides */
-body.light .text-white,
-body.light .text-zinc-100,
-body.light .text-zinc-200,
-body.light .text-zinc-300,
+/* High Legibility text overrides - selectively overrides light text to dark ONLY when on light containers.
+   Excludes buttons, badges, active tabs, progress chips, and elements that are actively styled with dark/vibrant backgrounds. */
+body.light .text-white:not(button):not(button *):not(.bg-white *):not(.badge *):not(.active-tab *):not(.btn *):not([class*="bg-teal-"]):not([class*="bg-emerald-"]):not([class*="bg-blue-"]):not([class*="bg-indigo-"]):not([class*="bg-red-"]):not([class*="bg-amber-"]):not([class*="bg-yellow-"]):not([class*="bg-orange-"]):not([class*="bg-cyan-"]):not(.xp-badge *):not(.active-pill *),
+body.light .text-zinc-100:not(button):not(button *):not(.bg-white *):not(.badge *):not(.active-tab *):not(.btn *):not([class*="bg-teal-"]):not([class*="bg-emerald-"]):not([class*="bg-blue-"]):not([class*="bg-indigo-"]):not([class*="bg-red-"]):not([class*="bg-amber-"]):not([class*="bg-yellow-"]):not([class*="bg-orange-"]):not([class*="bg-cyan-"]):not(.xp-badge *),
+body.light .text-zinc-200:not(button):not(button *):not(.bg-white *):not(.badge *):not(.active-tab *):not(.btn *):not([class*="bg-teal-"]):not([class*="bg-emerald-"]):not([class*="bg-blue-"]):not([class*="bg-indigo-"]):not([class*="bg-red-"]):not([class*="bg-amber-"]):not([class*="bg-yellow-"]):not([class*="bg-orange-"]):not([class*="bg-cyan-"]),
+body.light .text-zinc-300:not(button):not(button *):not(.bg-white *):not(.badge *):not(.active-tab *):not(.btn *):not([class*="bg-teal-"]):not([class*="bg-emerald-"]):not([class*="bg-blue-"]):not([class*="bg-indigo-"]):not([class*="bg-red-"]):not([class*="bg-amber-"]):not([class*="bg-yellow-"]):not([class*="bg-orange-"]):not([class*="bg-cyan-"]),
+body.light .text-slate-100:not(button):not(button *):not(.bg-white *):not(.badge *):not(.active-tab *):not(.btn *):not([class*="bg-teal-"]):not([class*="bg-emerald-"]):not([class*="bg-blue-"]):not([class*="bg-indigo-"]):not([class*="bg-red-"]):not([class*="bg-amber-"]):not([class*="bg-yellow-"]):not([class*="bg-orange-"]):not([class*="bg-cyan-"]),
 body.light .text-slate-900,
 body.light .text-slate-800,
 body.light .text-slate-700,
-body.light .text-slate-600,
-body.light .text-slate-100 {
+body.light .text-slate-600 {
   color: #0E1F22 !important;
+}
+
+/* Explicitly safeguard the legibility of active light-mode elements */
+body.light button.bg-white,
+body.light .bg-white.text-white,
+body.light .active-pill,
+body.light .active-tab {
+  color: #FFFFFF !important;
+}
+
+body.light button.bg-white *,
+body.light .bg-white.text-white *,
+body.light .active-pill *,
+body.light .active-tab * {
+  color: #FFFFFF !important;
 }
 
 /* Secondary & Subtitle Text */

@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import * as THREE from 'three';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 
 export type ThreeDElementType = 'priceTag' | 'trophy' | 'cap' | 'questionMark' | 'car' | 'tree';
 
@@ -19,614 +19,355 @@ export default function ThreeDElement({
   colorOverride
 }: ThreeDElementProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // High-performance springs for hover tilt effect
+  const rotateX = useSpring(0, { damping: 15, stiffness: 100 });
+  const rotateY = useSpring(0, { damping: 15, stiffness: 100 });
+  const scale = useSpring(1, { damping: 12, stiffness: 120 });
+  
+  // Page scroll tracking for parallax offset
+  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-    const container = containerRef.current;
-    let width = container.clientWidth || 150;
-    let height = container.clientHeight || 150;
+  // Compute parallax offset - subtle vertical translation on scroll
+  const parallaxY = scrollY * -0.06;
 
-    // Create Scene, Camera, and WebGL Renderer
-    const scene = new THREE.Scene();
+  // Track cursor coordinates relative to center of element
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!interactive || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const centerX = rect.left + width / 2;
+    const centerY = rect.top + height / 2;
     
-    // Transparent background
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.set(0, 0, 5);
+    // Normalize values between -1 and 1
+    const x = (e.clientX - centerX) / (width / 2);
+    const y = (e.clientY - centerY) / (height / 2);
+    
+    // Set rotX (vertical tilt) and rotY (horizontal tilt)
+    rotateX.set(-y * 22); // Tilt up to 22 degrees
+    rotateY.set(x * 22);
+  };
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
+  const handlePointerEnter = () => {
+    if (interactive) {
+      scale.set(1.08); // Subtle spring expansion on hover
+    }
+  };
 
-    // Warm, High-Fidelity Studio Lighting setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambientLight);
+  const handlePointerLeave = () => {
+    if (interactive) {
+      scale.set(1);
+      rotateX.set(0);
+      rotateY.set(0);
+    }
+  };
 
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
-    dirLight1.position.set(5, 8, 5);
-    scene.add(dirLight1);
-
-    const dirLight2 = new THREE.DirectionalLight(0xffdbb5, 0.8); // warm back light
-    dirLight2.position.set(-5, -5, -2);
-    scene.add(dirLight2);
-
-    const pointLight = new THREE.PointLight(0xffffff, 0.6, 10);
-    pointLight.position.set(0, 2, 2);
-    scene.add(pointLight);
-
-    // Parent group to hold our meshes and support rotations/animations
-    const group = new THREE.Group();
-    scene.add(group);
-
-    // Create Procedural meshes based on the Type
-    let modelMesh: THREE.Object3D;
-
+  // Render precise Vector SVG matching the style of the user's uploaded assets
+  const renderSVG = () => {
     switch (type) {
-      case 'priceTag': {
-        // Red Price Tag
-        const tagGroup = new THREE.Group();
-        
-        // Main Tag Body Shape (Extruded shape with clipped corner at the top)
-        const tagShape = new THREE.Shape();
-        const w = 1.0;
-        const h = 1.6;
-        const clip = 0.3;
+      case 'cap':
+        return (
+          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-[0_12px_16px_rgba(0,181,188,0.15)]">
+            <defs>
+              <linearGradient id="capTopGrad" x1="10" y1="25" x2="90" y2="45" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#00D5D5" />
+                <stop offset="50%" stopColor="#00A2C2" />
+                <stop offset="100%" stopColor="#024D64" />
+              </linearGradient>
+              <linearGradient id="capBaseGrad" x1="30" y1="45" x2="70" y2="75" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#0E2F37" />
+                <stop offset="100%" stopColor="#020C0F" />
+              </linearGradient>
+              <linearGradient id="tasselGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#FFF275" />
+                <stop offset="50%" stopColor="#F59E0B" />
+                <stop offset="100%" stopColor="#D97706" />
+              </linearGradient>
+            </defs>
+            {/* Skullcap base under mortarboard */}
+            <path d="M 32 46 Q 50 64 68 46 L 68 56 Q 50 72 32 56 Z" fill="url(#capBaseGrad)" />
+            <path d="M 32 56 Q 50 72 68 56" stroke="#00D5D5" strokeWidth="2" fill="none" opacity="0.4" />
+            
+            {/* Mortarboard diamond top */}
+            <path d="M 50 18 L 90 35 L 50 52 L 10 35 Z" fill="url(#capTopGrad)" stroke="#00A2C2" strokeWidth="1" />
+            {/* Mortarboard edge thickness/highlight */}
+            <path d="M 10 35 L 50 52 L 90 35" stroke="#E5F3F6" strokeWidth="2.5" strokeLinecap="round" opacity="0.6" fill="none" />
+            
+            {/* Tassel button in the center */}
+            <circle cx="50" cy="35" r="4.5" fill="url(#tasselGrad)" stroke="#92400E" strokeWidth="1" />
+            {/* Tassel string hanging down and to the right */}
+            <path d="M 50 35 Q 68 38 78 48 C 80 50 82 54 81 58" stroke="url(#tasselGrad)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            {/* Tassel fringe bulb and threads */}
+            <path d="M 77 56 Q 81 58 85 56 L 82 72 Q 81 74 80 72 Z" fill="url(#tasselGrad)" stroke="#92400E" strokeWidth="0.5" />
+          </svg>
+        );
 
-        tagShape.moveTo(-w/2, -h/2);
-        tagShape.lineTo(w/2, -h/2);
-        tagShape.lineTo(w/2, h/2 - clip);
-        tagShape.lineTo(w/2 - clip, h/2);
-        tagShape.lineTo(-w/2 + clip, h/2);
-        tagShape.lineTo(-w/2, h/2 - clip);
-        tagShape.closePath();
+      case 'trophy':
+        return (
+          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-[0_12px_20px_rgba(251,191,36,0.18)]">
+            <defs>
+              <linearGradient id="goldGrad1" x1="20" y1="20" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#FFF3A1" />
+                <stop offset="35%" stopColor="#FBBF24" />
+                <stop offset="70%" stopColor="#D97706" />
+                <stop offset="100%" stopColor="#92400E" />
+              </linearGradient>
+              <linearGradient id="goldHighlight" x1="45" y1="20" x2="55" y2="60" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#FFFBEB" />
+                <stop offset="100%" stopColor="#FBBF24" />
+              </linearGradient>
+              <linearGradient id="baseGrad" x1="30" y1="70" x2="70" y2="90" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#0E2F37" />
+                <stop offset="50%" stopColor="#06181C" />
+                <stop offset="100%" stopColor="#020C0F" />
+              </linearGradient>
+            </defs>
+            
+            {/* Left Handle */}
+            <path d="M 30 28 C 12 28 12 50 30 50" stroke="url(#goldGrad1)" strokeWidth="6" strokeLinecap="round" fill="none" />
+            <path d="M 30 32 C 18 32 18 46 30 46" stroke="#92400E" strokeWidth="1.5" fill="none" opacity="0.4" />
+            
+            {/* Right Handle */}
+            <path d="M 70 28 C 88 28 88 50 70 50" stroke="url(#goldGrad1)" strokeWidth="6" strokeLinecap="round" fill="none" />
+            <path d="M 70 32 C 82 32 82 46 70 46" stroke="#92400E" strokeWidth="1.5" fill="none" opacity="0.4" />
 
-        const extrudeSettings = {
-          depth: 0.08,
-          bevelEnabled: true,
-          bevelSegments: 4,
-          steps: 1,
-          bevelSize: 0.02,
-          bevelThickness: 0.02
-        };
+            {/* Main goblet cup body */}
+            <path d="M 30 20 L 70 20 L 68 52 C 68 62 58 66 50 66 C 42 66 32 62 32 52 Z" fill="url(#goldGrad1)" />
+            {/* Highlights for reflective metallic shine */}
+            <path d="M 34 23 L 45 23 C 43 45 40 58 34 50 Z" fill="#FFFBEB" opacity="0.25" />
+            <path d="M 52 23 L 63 23 C 60 45 57 58 52 50 Z" fill="#FFFBEB" opacity="0.15" />
 
-        const tagColor = colorOverride || '#ef4444'; // Red tag
-        const tagMaterial = new THREE.MeshPhysicalMaterial({
-          color: new THREE.Color(tagColor),
-          roughness: 0.15,
-          metalness: 0.1,
-          clearcoat: 1.0,
-          clearcoatRoughness: 0.1
-        });
+            {/* Rim of cup */}
+            <ellipse cx="50" cy="20" rx="20" ry="4" fill="url(#goldHighlight)" stroke="#D97706" strokeWidth="1" />
+            
+            {/* Stem */}
+            <path d="M 46 66 L 54 66 L 54 78 L 46 78 Z" fill="url(#goldGrad1)" />
+            <ellipse cx="50" cy="78" rx="10" ry="3" fill="url(#goldGrad1)" />
+            
+            {/* Pedestal Base */}
+            <path d="M 34 80 L 66 80 L 70 92 L 30 92 Z" fill="url(#baseGrad)" stroke="#0E2F37" strokeWidth="1.5" />
+            {/* Gold plate on base */}
+            <rect x="42" y="84" width="16" height="5" rx="1" fill="url(#goldGrad1)" />
+            <circle cx="50" cy="86.5" r="0.8" fill="#FFFFFF" />
 
-        const tagBody = new THREE.Mesh(new THREE.ExtrudeGeometry(tagShape, extrudeSettings), tagMaterial);
-        tagBody.position.z = -0.04; // Center the depth
-        tagGroup.add(tagBody);
+            {/* Star badge in center */}
+            <path d="M 50 32 L 53 39 L 60 40 L 55 45 L 56 52 L 50 48 L 44 52 L 45 45 L 40 40 L 47 39 Z" fill="#FFFBEB" filter="drop-shadow(0px 1.5px 3px rgba(217,119,6,0.6))" />
+          </svg>
+        );
 
-        // Metal eyelet hole
-        const eyeletGeom = new THREE.TorusGeometry(0.08, 0.03, 12, 24);
-        const eyeletMat = new THREE.MeshStandardMaterial({
-          color: 0xcccccc,
-          metalness: 0.9,
-          roughness: 0.1
-        });
-        const eyelet = new THREE.Mesh(eyeletGeom, eyeletMat);
-        eyelet.position.set(0, h/2 - 0.22, 0.04);
-        tagGroup.add(eyelet);
+      case 'priceTag':
+        const finalColor = colorOverride || '#EF4444';
+        return (
+          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-[0_12px_16px_rgba(239,68,68,0.18)]">
+            <defs>
+              <linearGradient id="redGrad" x1="20" y1="20" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor={finalColor} />
+                <stop offset="100%" stopColor="#991B1B" />
+              </linearGradient>
+              <linearGradient id="silverGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#F8FAFC" />
+                <stop offset="50%" stopColor="#94A3B8" />
+                <stop offset="100%" stopColor="#475569" />
+              </linearGradient>
+            </defs>
+            <g transform="rotate(-15 50 50)">
+              {/* Tilted price tag body */}
+              <path d="M 30 25 L 56 25 Q 60 25 62 28 L 74 44 Q 76 47 74 50 L 50 85 Q 47 89 43 85 L 18 50 Q 16 47 18 44 Z" fill="url(#redGrad)" stroke="#7F1D1D" strokeWidth="1" />
+              {/* White dashed stitching */}
+              <path d="M 32 29 L 54 29 L 69 46 L 47 79 L 23 46 Z" stroke="#FFF5F5" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.85" fill="none" />
+              {/* Metal eyelet */}
+              <circle cx="45" cy="38" r="6.5" fill="url(#silverGrad)" />
+              <circle cx="45" cy="38" r="3" fill="#991B1B" />
+              {/* Thread line trailing */}
+              <path d="M 45 38 C 48 28 55 12 66 16 C 76 19 69 32 56 26" stroke="#E2E8F0" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.9" />
+            </g>
+          </svg>
+        );
 
-        // White paper price label strip
-        const labelGeom = new THREE.BoxGeometry(0.6, 0.5, 0.01);
-        const labelMat = new THREE.MeshStandardMaterial({
-          color: 0xfbfbfb,
-          roughness: 0.7
-        });
-        const label = new THREE.Mesh(labelGeom, labelMat);
-        label.position.set(0, -0.2, 0.06);
-        tagGroup.add(label);
+      case 'questionMark':
+        return (
+          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-[0_12px_20px_rgba(245,158,11,0.22)]">
+            <defs>
+              <linearGradient id="qGold" x1="20" y1="20" x2="80" y2="80">
+                <stop offset="0%" stopColor="#FFF275" />
+                <stop offset="40%" stopColor="#FBBF24" />
+                <stop offset="75%" stopColor="#D97706" />
+                <stop offset="100%" stopColor="#92400E" />
+              </linearGradient>
+              <linearGradient id="qShine" x1="30" y1="20" x2="40" y2="50">
+                <stop offset="0%" stopColor="#FFFBEB" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#FFFBEB" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            {/* Plump, friendly glossy question mark */}
+            <path d="M 28 36 C 28 19 42 15 50 15 C 64 15 72 25 72 37 C 72 49 58 51 56 61 L 56 65 L 44 65 L 44 57 C 44 45 58 43 58 35 C 58 30 54 27 50 27 C 44 27 40 30 40 35 Z" fill="url(#qGold)" />
+            {/* 3D Glass / Gloss highlighting */}
+            <path d="M 31 36 C 31 21 43 18 50 18 C 58 18 66 23 67 33 C 64 25 56 21 50 21 C 43 21 35 25 34 35 Z" fill="url(#qShine)" />
+            {/* Dot bottom */}
+            <circle cx="50" cy="79" r="7.5" fill="url(#qGold)" />
+            <circle cx="47.5" cy="76.5" r="3.2" fill="#FFFBEB" opacity="0.45" />
+          </svg>
+        );
 
-        // String hanging from the eyelet
-        const stringGeom = new THREE.CylinderGeometry(0.01, 0.01, 0.6, 8);
-        const stringMat = new THREE.MeshBasicMaterial({ color: 0xdddddd });
-        const stringMesh = new THREE.Mesh(stringGeom, stringMat);
-        stringMesh.position.set(0, h/2 + 0.08, 0.04);
-        stringMesh.rotation.z = -0.1;
-        tagGroup.add(stringMesh);
+      case 'car':
+        return (
+          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-[0_14px_20px_rgba(0,181,188,0.18)]">
+            <defs>
+              <linearGradient id="carBody" x1="10" y1="50" x2="90" y2="50" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#EF4444" />
+                <stop offset="50%" stopColor="#DC2626" />
+                <stop offset="100%" stopColor="#991B1B" />
+              </linearGradient>
+              <linearGradient id="glassGrad" x1="40" y1="35" x2="60" y2="50">
+                <stop offset="0%" stopColor="#0F172A" />
+                <stop offset="100%" stopColor="#020C0F" />
+              </linearGradient>
+              <linearGradient id="wheelGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#64748B" />
+                <stop offset="100%" stopColor="#020C0F" />
+              </linearGradient>
+            </defs>
 
-        modelMesh = tagGroup;
-        break;
-      }
+            {/* Road ambient shadow */}
+            <ellipse cx="50" cy="75" rx="36" ry="6.5" fill="#000000" opacity="0.4" filter="blur(3.5px)" />
 
-      case 'trophy': {
-        // Golden Trophy Cup
-        const trophyGroup = new THREE.Group();
+            {/* Wheels */}
+            <circle cx="28" cy="68" r="9.5" fill="url(#wheelGrad)" stroke="#1E293B" strokeWidth="1.5" />
+            <circle cx="28" cy="68" r="5" fill="#94A3B8" />
+            <circle cx="28" cy="68" r="2" fill="#475569" />
+            
+            <circle cx="72" cy="68" r="9.5" fill="url(#wheelGrad)" stroke="#1E293B" strokeWidth="1.5" />
+            <circle cx="72" cy="68" r="5" fill="#94A3B8" />
+            <circle cx="72" cy="68" r="2" fill="#475569" />
 
-        // 1. Black marble base
-        const baseGeom = new THREE.CylinderGeometry(0.4, 0.5, 0.35, 16);
-        const baseMat = new THREE.MeshStandardMaterial({
-          color: 0x18181b,
-          roughness: 0.2,
-          metalness: 0.2
-        });
-        const base = new THREE.Mesh(baseGeom, baseMat);
-        base.position.y = -0.8;
-        trophyGroup.add(base);
+            {/* Sleek aerodynamic sports car body */}
+            <path d="M 12 62 C 12 58 18 55 24 54 C 28 41 38 33 50 33 C 64 33 74 43 78 54 C 84 55 88 58 88 62 C 88 68 82 72 78 72 L 22 72 C 18 72 12 68 12 62 Z" fill="url(#carBody)" />
+            
+            {/* Window glass cabin */}
+            <path d="M 33 53 C 33 45 38 39 48 38 C 58 37 65 41 67 53 Z" fill="url(#glassGrad)" />
+            {/* Window pillar */}
+            <path d="M 50 38 L 51.5 53" stroke="#475569" strokeWidth="2" />
+            {/* Highlight shine */}
+            <path d="M 37 47 C 41 41 47 41 49 41" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" opacity="0.35" fill="none" />
 
-        // 2. Gold Stem / Support
-        const stemGeom = new THREE.CylinderGeometry(0.12, 0.18, 0.4, 16);
-        const goldMaterial = new THREE.MeshStandardMaterial({
-          color: 0xfacc15, // Golden color
-          metalness: 0.9,
-          roughness: 0.15
-        });
-        const stem = new THREE.Mesh(stemGeom, goldMaterial);
-        stem.position.y = -0.45;
-        trophyGroup.add(stem);
+            {/* Vibrant futuristic neon yellow/cyan headlight */}
+            <path d="M 82 58 C 85 58 88 61 88 64 C 85 64 82 62 82 58 Z" fill="#00D5D5" filter="drop-shadow(0 0 4px #00D5D5)" />
+            {/* Tail light */}
+            <path d="M 12 62 C 12 60 14 59 16 59 Z" fill="#EF4444" />
 
-        // 3. Central Trophy Sphere Node
-        const nodeGeom = new THREE.SphereGeometry(0.18, 16, 16);
-        const node = new THREE.Mesh(nodeGeom, goldMaterial);
-        node.position.y = -0.25;
-        trophyGroup.add(node);
+            {/* Character styling side door line */}
+            <path d="M 38 62 L 62 62" stroke="#7F1D1D" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M 38 64 L 62 64" stroke="#FCA5A5" strokeWidth="1" opacity="0.3" />
+          </svg>
+        );
 
-        // 4. Main Chalice / Cup Body
-        const cupGeom = new THREE.CylinderGeometry(0.6, 0.25, 0.8, 24, 1, true); // open-ended cup
-        const cup = new THREE.Mesh(cupGeom, goldMaterial);
-        cup.position.y = 0.25;
-        trophyGroup.add(cup);
+      case 'tree':
+        return (
+          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-[0_12px_18px_rgba(16,185,129,0.18)]">
+            <defs>
+              <linearGradient id="leavesBottom" x1="30" y1="30" x2="70" y2="70">
+                <stop offset="0%" stopColor="#047857" />
+                <stop offset="100%" stopColor="#064E3B" />
+              </linearGradient>
+              <linearGradient id="leavesMid" x1="20" y1="20" x2="80" y2="60">
+                <stop offset="0%" stopColor="#10B981" />
+                <stop offset="100%" stopColor="#047857" />
+              </linearGradient>
+              <linearGradient id="leavesTop" x1="30" y1="10" x2="70" y2="50">
+                <stop offset="0%" stopColor="#34D399" />
+                <stop offset="100%" stopColor="#059669" />
+              </linearGradient>
+              <linearGradient id="trunkGrad" x1="45" y1="50" x2="55" y2="90">
+                <stop offset="0%" stopColor="#78350F" />
+                <stop offset="100%" stopColor="#451A03" />
+              </linearGradient>
+            </defs>
+            
+            {/* Base ambient shadow under the tree */}
+            <ellipse cx="50" cy="88" rx="22" ry="4" fill="#000000" opacity="0.25" filter="blur(2.5px)" />
 
-        // Inner cup base filler to make it look solid
-        const fillerGeom = new THREE.CylinderGeometry(0.58, 0.23, 0.78, 24);
-        const filler = new THREE.Mesh(fillerGeom, goldMaterial);
-        filler.position.y = 0.24;
-        trophyGroup.add(filler);
+            {/* Tree trunk and structured branching */}
+            <path d="M 46 88 L 54 88 L 53 62 C 58 58 64 54 66 48 L 61 46 C 58 50 53 54 51 58 L 49 58 C 47 54 42 50 39 46 L 34 48 C 36 54 42 58 47 62 Z" fill="url(#trunkGrad)" stroke="#451A03" strokeWidth="0.5" />
+            
+            {/* Fluffy, layered cartoon cloud foliage (matches bottom-left tree of the PNG) */}
+            <circle cx="36" cy="56" r="15" fill="url(#leavesBottom)" />
+            <circle cx="64" cy="56" r="15" fill="url(#leavesBottom)" />
+            
+            <circle cx="28" cy="42" r="16" fill="url(#leavesMid)" />
+            <circle cx="72" cy="42" r="16" fill="url(#leavesMid)" />
+            <circle cx="50" cy="46" r="18" fill="url(#leavesMid)" />
 
-        // 5. Left and Right Handles
-        const handleGeom = new THREE.TorusGeometry(0.3, 0.06, 12, 24, Math.PI * 1.2);
-        const leftHandle = new THREE.Mesh(handleGeom, goldMaterial);
-        leftHandle.position.set(-0.48, 0.3, 0);
-        leftHandle.rotation.z = Math.PI * 0.9;
-        trophyGroup.add(leftHandle);
-
-        const rightHandle = new THREE.Mesh(handleGeom, goldMaterial);
-        rightHandle.position.set(0.48, 0.3, 0);
-        rightHandle.rotation.z = -Math.PI * 0.9;
-        rightHandle.rotation.y = Math.PI; // flip
-        trophyGroup.add(rightHandle);
-
-        // Star sticker emblem on front
-        const emblemGeom = new THREE.CylinderGeometry(0.12, 0.12, 0.02, 16);
-        const emblemMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
-        const emblem = new THREE.Mesh(emblemGeom, emblemMat);
-        emblem.position.set(0, 0.25, 0.44);
-        emblem.rotation.x = Math.PI / 2;
-        trophyGroup.add(emblem);
-
-        modelMesh = trophyGroup;
-        break;
-      }
-
-      case 'cap': {
-        // Graduation mortarboard cap
-        const capGroup = new THREE.Group();
-
-        // 1. Main Square Flat Board on top
-        const boardGeom = new THREE.BoxGeometry(1.6, 0.06, 1.6);
-        const boardMat = new THREE.MeshStandardMaterial({
-          color: 0x1e1b4b, // Dark indigo
-          roughness: 0.4,
-          metalness: 0.1
-        });
-        const board = new THREE.Mesh(boardGeom, boardMat);
-        board.position.y = 0.35;
-        board.rotation.y = Math.PI / 4; // Rotated diamond look
-        capGroup.add(board);
-
-        // 2. Skull Cap cylinder below
-        const skullGeom = new THREE.CylinderGeometry(0.5, 0.54, 0.45, 24);
-        const skull = new THREE.Mesh(skullGeom, boardMat);
-        skull.position.y = 0.12;
-        capGroup.add(skull);
-
-        // 3. Mini Button on very top center
-        const buttonGeom = new THREE.CylinderGeometry(0.08, 0.08, 0.04, 12);
-        const tasselMat = new THREE.MeshStandardMaterial({
-          color: 0xfacc15, // Golden yellow tassel
-          metalness: 0.7,
-          roughness: 0.2
-        });
-        const button = new THREE.Mesh(buttonGeom, tasselMat);
-        button.position.y = 0.4;
-        capGroup.add(button);
-
-        // 4. Hanging tassel cord
-        const cordGeom = new THREE.CylinderGeometry(0.015, 0.015, 0.8, 8);
-        const cord = new THREE.Mesh(cordGeom, tasselMat);
-        cord.position.set(0.4, 0.1, 0.4);
-        cord.rotation.z = -0.4;
-        cord.rotation.x = 0.4;
-        capGroup.add(cord);
-
-        // 5. Tassel brush ending
-        const brushGeom = new THREE.CylinderGeometry(0.04, 0.06, 0.22, 12);
-        const brush = new THREE.Mesh(brushGeom, tasselMat);
-        brush.position.set(0.62, -0.22, 0.62);
-        capGroup.add(brush);
-
-        modelMesh = capGroup;
-        break;
-      }
-
-      case 'questionMark': {
-        // Plump gloss 3D Question Mark
-        const qGroup = new THREE.Group();
-
-        // Shape for custom extruded "?"
-        const qShape = new THREE.Shape();
-        // Outer loop of question mark
-        qShape.moveTo(-0.15, -0.2);
-        qShape.lineTo(0.15, -0.2);
-        qShape.lineTo(0.15, 0.1);
-        qShape.bezierCurveTo(0.15, 0.4, 0.45, 0.4, 0.45, 0.7);
-        qShape.bezierCurveTo(0.45, 1.1, -0.45, 1.1, -0.45, 0.7);
-        qShape.lineTo(-0.15, 0.7);
-        qShape.bezierCurveTo(-0.15, 0.85, 0.15, 0.85, 0.15, 0.7);
-        qShape.bezierCurveTo(0.15, 0.55, -0.15, 0.5, -0.15, 0.1);
-        qShape.closePath();
-
-        const extrudeSettings = {
-          depth: 0.25,
-          bevelEnabled: true,
-          bevelSegments: 5,
-          steps: 1,
-          bevelSize: 0.05,
-          bevelThickness: 0.05
-        };
-
-        const qColor = colorOverride || '#fbbf24'; // Golden amber
-        const qMaterial = new THREE.MeshPhysicalMaterial({
-          color: new THREE.Color(qColor),
-          roughness: 0.1,
-          metalness: 0.3,
-          clearcoat: 1.0,
-          clearcoatRoughness: 0.1
-        });
-
-        const mainQ = new THREE.Mesh(new THREE.ExtrudeGeometry(qShape, extrudeSettings), qMaterial);
-        mainQ.position.set(0, -0.1, -0.12);
-        qGroup.add(mainQ);
-
-        // Question mark dot
-        const dotGeom = new THREE.SphereGeometry(0.16, 24, 24);
-        const dot = new THREE.Mesh(dotGeom, qMaterial);
-        dot.position.set(0, -0.58, 0);
-        qGroup.add(dot);
-
-        modelMesh = qGroup;
-        break;
-      }
-
-      case 'car': {
-        // High fidelity sports car model
-        const carGroup = new THREE.Group();
-
-        const bodyColor = colorOverride || '#3b82f6'; // Bright royal blue
-        const bodyMat = new THREE.MeshPhysicalMaterial({
-          color: new THREE.Color(bodyColor),
-          roughness: 0.15,
-          metalness: 0.2,
-          clearcoat: 1.0
-        });
-
-        const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7 });
-        const glassMat = new THREE.MeshPhysicalMaterial({
-          color: 0x0a0a0a,
-          roughness: 0.05,
-          metalness: 0.9,
-          transmission: 0.9,
-          transparent: true
-        });
-
-        // Main chassis
-        const chassisGeom = new THREE.BoxGeometry(1.5, 0.35, 0.85);
-        const chassis = new THREE.Mesh(chassisGeom, bodyMat);
-        chassis.position.y = -0.1;
-        carGroup.add(chassis);
-
-        // Cabin top
-        const cabinGeom = new THREE.BoxGeometry(0.8, 0.3, 0.75);
-        const cabin = new THREE.Mesh(cabinGeom, bodyMat);
-        cabin.position.set(-0.1, 0.2, 0);
-        carGroup.add(cabin);
-
-        // Windshield glass
-        const windGeom = new THREE.BoxGeometry(0.3, 0.25, 0.7);
-        const windshield = new THREE.Mesh(windGeom, glassMat);
-        windshield.position.set(0.34, 0.16, 0);
-        windshield.rotation.z = -0.6;
-        carGroup.add(windshield);
-
-        // Front Hood curve
-        const hoodGeom = new THREE.BoxGeometry(0.4, 0.2, 0.85);
-        const hood = new THREE.Mesh(hoodGeom, bodyMat);
-        hood.position.set(0.7, -0.05, 0);
-        carGroup.add(hood);
-
-        // Wheels
-        const wheelGeom = new THREE.CylinderGeometry(0.24, 0.24, 0.18, 16);
-        const wheels: THREE.Mesh[] = [];
-
-        const positions = [
-          [-0.45, -0.22, 0.44], // rear left
-          [0.45, -0.22, 0.44],  // front left
-          [-0.45, -0.22, -0.44], // rear right
-          [0.45, -0.22, -0.44]   // front right
-        ];
-
-        positions.forEach((pos) => {
-          const wheel = new THREE.Mesh(wheelGeom, blackMat);
-          wheel.position.set(pos[0], pos[1], pos[2]);
-          wheel.rotation.x = Math.PI / 2;
-          carGroup.add(wheel);
-          wheels.push(wheel);
-        });
-
-        // Golden headlights
-        const lightGeom = new THREE.BoxGeometry(0.06, 0.08, 0.15);
-        const lightMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
-        const leftLight = new THREE.Mesh(lightGeom, lightMat);
-        leftLight.position.set(0.9, -0.05, 0.26);
-        carGroup.add(leftLight);
-
-        const rightLight = new THREE.Mesh(lightGeom, lightMat);
-        rightLight.position.set(0.9, -0.05, -0.26);
-        carGroup.add(rightLight);
-
-        modelMesh = carGroup;
-        break;
-      }
-
-      case 'tree': {
-        // Aesthetic Low-Poly Tree
-        const treeGroup = new THREE.Group();
-
-        // Trunk
-        const trunkGeom = new THREE.CylinderGeometry(0.12, 0.18, 0.8, 8);
-        const trunkMat = new THREE.MeshStandardMaterial({
-          color: 0x78350f, // brown
-          roughness: 0.8
-        });
-        const trunk = new THREE.Mesh(trunkGeom, trunkMat);
-        trunk.position.y = -0.5;
-        treeGroup.add(trunk);
-
-        // Canopy layered spheres/cones for a cute bento-look
-        const foliageMat = new THREE.MeshStandardMaterial({
-          color: 0x10b981, // Emerald green
-          roughness: 0.6,
-          metalness: 0.1
-        });
-
-        // Layer 1 (bottom foliage)
-        const f1Geom = new THREE.SphereGeometry(0.55, 12, 12);
-        const f1 = new THREE.Mesh(f1Geom, foliageMat);
-        f1.position.y = -0.1;
-        treeGroup.add(f1);
-
-        // Layer 2 (mid foliage)
-        const f2Geom = new THREE.SphereGeometry(0.45, 12, 12);
-        const f2 = new THREE.Mesh(f2Geom, foliageMat);
-        f2.position.set(0.1, 0.3, -0.05);
-        treeGroup.add(f2);
-
-        // Layer 3 (top foliage)
-        const f3Geom = new THREE.SphereGeometry(0.32, 12, 12);
-        const f3 = new THREE.Mesh(f3Geom, foliageMat);
-        f3.position.set(-0.1, 0.6, 0.05);
-        treeGroup.add(f3);
-
-        modelMesh = treeGroup;
-        break;
-      }
+            <circle cx="38" cy="28" r="15" fill="url(#leavesTop)" />
+            <circle cx="62" cy="28" r="15" fill="url(#leavesTop)" />
+            <circle cx="50" cy="22" r="16" fill="url(#leavesTop)" />
+            
+            {/* Organic details / highlights for rich cartoon finish */}
+            <circle cx="48" cy="18" r="2.2" fill="#D1FAE5" opacity="0.65" />
+            <circle cx="34" cy="24" r="1.5" fill="#D1FAE5" opacity="0.5" />
+            <circle cx="64" cy="24" r="1.5" fill="#D1FAE5" opacity="0.5" />
+            <circle cx="53" cy="40" r="1.8" fill="#A7F3D0" opacity="0.4" />
+          </svg>
+        );
 
       default:
-        // Fallback simple wireframe cube
-        const boxGeom = new THREE.BoxGeometry(1, 1, 1);
-        const boxMat = new THREE.MeshStandardMaterial({ color: 0xef4444 });
-        modelMesh = new THREE.Mesh(boxGeom, boxMat);
+        return null;
     }
+  };
 
-    group.add(modelMesh);
-
-    // Initial scale-up animation with significantly enlarged model dimensions
-    group.scale.set(0.001, 0.001, 0.001);
-    let targetScale = 1.35;
-    if (type === 'priceTag') targetScale = 1.9;
-    if (type === 'trophy') targetScale = 1.95;
-    if (type === 'cap') targetScale = 1.95;
-    if (type === 'questionMark') targetScale = 1.9;
-    if (type === 'car') targetScale = 2.1;
-    if (type === 'tree') targetScale = 1.8;
-
-    // Viewport relative scroll-based parallax tracking
-    let scrollProgress = 0; // -1 to +1 depending on position in viewport
-    let targetScrollProgress = 0;
-
-    const handleScroll = () => {
-      const rect = container.getBoundingClientRect();
-      const viewHeight = window.innerHeight;
-      
-      // Calculate how far the center of the element is from the center of the viewport
-      const elementCenter = rect.top + rect.height / 2;
-      const screenCenter = viewHeight / 2;
-      
-      // Normalize scroll range securely
-      const denom = (viewHeight / 2) + 200;
-      targetScrollProgress = (elementCenter - screenCenter) / denom;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll, { passive: true });
-    
-    // Initial evaluation
-    handleScroll();
-
-    // Interaction handlers
-    let isHovered = false;
-    let targetRotationX = 0;
-    let targetRotationY = 0;
-    let currentRotationX = 0;
-    let currentRotationY = 0;
-
-    const handlePointerMove = (e: PointerEvent) => {
-      if (!interactive) return;
-      const rect = container.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / width) * 2 - 1;
-      const y = -((e.clientY - rect.top) / height) * 2 + 1;
-      
-      targetRotationY = x * 0.8;
-      targetRotationX = -y * 0.8;
-    };
-
-    const handlePointerEnter = () => {
-      isHovered = true;
-    };
-
-    const handlePointerLeave = () => {
-      isHovered = false;
-      targetRotationX = 0;
-      targetRotationY = 0;
-    };
-
-    if (interactive) {
-      container.addEventListener('pointermove', handlePointerMove);
-      container.addEventListener('pointerenter', handlePointerEnter);
-      container.addEventListener('pointerleave', handlePointerLeave);
-    }
-
-    // Render loop
-    let animationFrameId: number;
-    let clock = new THREE.Clock();
-
-    const animate = () => {
-      animationFrameId = requestAnimationFrame(animate);
-
-      const elapsedTime = clock.getElapsedTime();
-
-      // Scale transition
-      if (group.scale.x < targetScale) {
-        const s = THREE.MathUtils.lerp(group.scale.x, targetScale, 0.08);
-        group.scale.set(s, s, s);
-      }
-
-      // Smoothly lerp our scroll progress to avoid any snapping/flickering
-      scrollProgress = THREE.MathUtils.lerp(scrollProgress, targetScrollProgress, 0.08);
-
-      // Parallax values (moves slower/faster in Z and slight rotational reaction)
-      const parallaxY = -scrollProgress * 0.45; 
-      const parallaxRotY = scrollProgress * 0.7;
-      const parallaxRotX = scrollProgress * 0.3;
-
-      // Base idle floating
-      const idleFloat = Math.sin(elapsedTime * 1.5) * 0.08;
-
-      // Combine floating height and parallax height offset
-      group.position.y = idleFloat + parallaxY;
-
-      // Continuous automatic idle motion (floating and slight rotating) combined with scroll parallax rotation
-      if (autoRotate && !isHovered) {
-        if (type === 'priceTag') {
-          group.rotation.y = Math.sin(elapsedTime * 0.6) * 0.25 + parallaxRotY;
-          group.rotation.x = Math.sin(elapsedTime * 0.8) * 0.15 + parallaxRotX;
-        } else if (type === 'trophy') {
-          group.rotation.y = (elapsedTime * 0.4) + parallaxRotY;
-          group.rotation.x = parallaxRotX;
-        } else if (type === 'cap') {
-          group.rotation.y = Math.sin(elapsedTime * 0.4) * 0.3 + parallaxRotY;
-          group.rotation.x = parallaxRotX;
-          group.rotation.z = Math.cos(elapsedTime * 0.5) * 0.05;
-        } else if (type === 'questionMark') {
-          group.rotation.y = (elapsedTime * 0.6) + parallaxRotY;
-          group.rotation.x = parallaxRotX;
-        } else if (type === 'car') {
-          group.rotation.y = (elapsedTime * 0.3) + parallaxRotY;
-          group.rotation.x = parallaxRotX;
-        } else if (type === 'tree') {
-          group.rotation.y = Math.sin(elapsedTime * 0.4) * 0.15 + parallaxRotY;
-          group.rotation.z = Math.sin(elapsedTime * 1.0) * 0.04;
-          group.rotation.x = parallaxRotX;
-        }
-      } else {
-        // Apply smooth scroll parallax rotations even when autoRotate is false or hovering
-        group.rotation.y = parallaxRotY;
-        group.rotation.x = parallaxRotX;
-      }
-
-      // Smooth interpolation for interactive cursor response
-      if (interactive) {
-        currentRotationX = THREE.MathUtils.lerp(currentRotationX, targetRotationX, 0.1);
-        currentRotationY = THREE.MathUtils.lerp(currentRotationY, targetRotationY, 0.1);
-
-        if (isHovered) {
-          modelMesh.rotation.x = currentRotationX;
-          modelMesh.rotation.y = currentRotationY;
-        } else {
-          // decay back to default
-          modelMesh.rotation.x = THREE.MathUtils.lerp(modelMesh.rotation.x, 0, 0.08);
-          if (!autoRotate) {
-            modelMesh.rotation.y = THREE.MathUtils.lerp(modelMesh.rotation.y, 0, 0.08);
-          }
+  // Determine standard float values - if autoRotate is enabled, float up and down slightly
+  const floatTransition = autoRotate 
+    ? {
+        y: {
+          duration: 3 + (type.charCodeAt(0) % 3) * 0.5, // Slightly staggered periods to prevent uniformity
+          repeat: Infinity,
+          repeatType: "reverse" as const,
+          ease: "easeInOut"
+        },
+        rotate: {
+          duration: 6 + (type.charCodeAt(1) % 4),
+          repeat: Infinity,
+          repeatType: "reverse" as const,
+          ease: "easeInOut"
         }
       }
+    : undefined;
 
-      renderer.render(scene, camera);
-    };
-
-    animate();
-
-    // Resize Observer for fluidity
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) {
-        width = entry.contentRect.width || 150;
-        height = entry.contentRect.height || 150;
-        renderer.setSize(width, height);
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
+  const floatAnimation = autoRotate
+    ? {
+        y: [0, -10, 0],
+        rotate: [0, 1.5, -1.5, 0]
       }
-    });
-    resizeObserver.observe(container);
-
-    // Clean up
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      resizeObserver.disconnect();
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
-      if (interactive) {
-        container.removeEventListener('pointermove', handlePointerMove);
-        container.removeEventListener('pointerenter', handlePointerEnter);
-        container.removeEventListener('pointerleave', handlePointerLeave);
-      }
-      container.removeChild(renderer.domElement);
-
-      // Recursive disposal of ThreeJS resources
-      scene.traverse((object) => {
-        if (!(object instanceof THREE.Mesh)) return;
-        object.geometry.dispose();
-        if (Array.isArray(object.material)) {
-          object.material.forEach((mat) => mat.dispose());
-        } else {
-          object.material.dispose();
-        }
-      });
-      renderer.dispose();
-    };
-  }, [type, autoRotate, interactive, colorOverride]);
+    : {};
 
   return (
-    <div 
-      ref={containerRef} 
-      className={`${className} cursor-grab active:cursor-grabbing select-none outline-none`}
-    />
+    <motion.div
+      ref={containerRef}
+      onPointerMove={handlePointerMove}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
+      style={{
+        rotateX: rotateX,
+        rotateY: rotateY,
+        scale: scale,
+        y: parallaxY, // Smooth physical vertical parallax on scroll
+        transformStyle: "preserve-3d"
+      }}
+      animate={floatAnimation}
+      transition={floatTransition}
+      className={`${className} cursor-grab active:cursor-grabbing select-none outline-none flex items-center justify-center`}
+    >
+      <div className="w-full h-full relative" style={{ transform: "translateZ(30px)" }}>
+        {renderSVG()}
+      </div>
+    </motion.div>
   );
 }
