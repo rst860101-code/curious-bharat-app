@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 
-export type ThreeDElementType = 'priceTag' | 'trophy' | 'cap' | 'questionMark' | 'car' | 'tree';
+export type ThreeDElementType = 'priceTag' | 'trophy' | 'cap' | 'questionMark' | 'car' | 'tree' | 'robot' | 'boy';
 
 interface ThreeDElementProps {
   type: ThreeDElementType;
@@ -270,51 +270,148 @@ export default function ThreeDElement({
           </svg>
         );
 
+      case 'boy':
       case 'tree':
         return (
-          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-[0_12px_18px_rgba(16,185,129,0.18)]">
+          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-[0_12px_24px_rgba(79,157,255,0.3)]">
             <defs>
-              <linearGradient id="leavesBottom" x1="30" y1="30" x2="70" y2="70">
-                <stop offset="0%" stopColor="#047857" />
+              <linearGradient id="hairGrad" x1="30" y1="10" x2="70" y2="30" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#1E293B" />
+                <stop offset="100%" stopColor="#0F172A" />
+              </linearGradient>
+              <linearGradient id="skinGrad" x1="40" y1="25" x2="60" y2="55" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#FED7AA" />
+                <stop offset="100%" stopColor="#FDBA74" />
+              </linearGradient>
+              <linearGradient id="hoodieGrad" x1="20" y1="50" x2="80" y2="90" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#3B82F6" />
+                <stop offset="50%" stopColor="#1D4ED8" />
+                <stop offset="100%" stopColor="#1E3A8A" />
+              </linearGradient>
+              <linearGradient id="bookGrad" x1="30" y1="65" x2="70" y2="85" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#34D399" />
+                <stop offset="50%" stopColor="#059669" />
                 <stop offset="100%" stopColor="#064E3B" />
               </linearGradient>
-              <linearGradient id="leavesMid" x1="20" y1="20" x2="80" y2="60">
-                <stop offset="0%" stopColor="#10B981" />
-                <stop offset="100%" stopColor="#047857" />
-              </linearGradient>
-              <linearGradient id="leavesTop" x1="30" y1="10" x2="70" y2="50">
-                <stop offset="0%" stopColor="#34D399" />
-                <stop offset="100%" stopColor="#059669" />
-              </linearGradient>
-              <linearGradient id="trunkGrad" x1="45" y1="50" x2="55" y2="90">
-                <stop offset="0%" stopColor="#78350F" />
-                <stop offset="100%" stopColor="#451A03" />
+              <linearGradient id="glowGrad" x1="50" y1="55" x2="50" y2="90" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
               </linearGradient>
             </defs>
             
-            {/* Base ambient shadow under the tree */}
-            <ellipse cx="50" cy="88" rx="22" ry="4" fill="#000000" opacity="0.25" filter="blur(2.5px)" />
+            {/* Ambient Base Shadow */}
+            <ellipse cx="50" cy="92" rx="32" ry="5" fill="#000000" opacity="0.45" filter="blur(3px)" />
+            
+            {/* Glowing magic beam from the book */}
+            <path d="M 24 74 L 50 45 L 76 74 Z" fill="url(#glowGrad)" opacity="0.45" />
+            <circle cx="50" cy="54" r="1.5" fill="#FFFFFF" opacity="0.9" className="animate-ping" />
+            <circle cx="38" cy="62" r="1.2" fill="#93C5FD" opacity="0.8" />
+            <circle cx="62" cy="62" r="1.2" fill="#93C5FD" opacity="0.8" />
 
-            {/* Tree trunk and structured branching */}
-            <path d="M 46 88 L 54 88 L 53 62 C 58 58 64 54 66 48 L 61 46 C 58 50 53 54 51 58 L 49 58 C 47 54 42 50 39 46 L 34 48 C 36 54 42 58 47 62 Z" fill="url(#trunkGrad)" stroke="#451A03" strokeWidth="0.5" />
+            {/* Boy Body/Hoodie */}
+            <path d="M 22 88 C 22 72 32 60 50 60 C 68 60 78 72 78 88 Z" fill="url(#hoodieGrad)" />
+            {/* Hoodie Collar drawstrings */}
+            <path d="M 45 62 L 43 74" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
+            <path d="M 55 62 L 57 74" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
             
-            {/* Fluffy, layered cartoon cloud foliage (matches bottom-left tree of the PNG) */}
-            <circle cx="36" cy="56" r="15" fill="url(#leavesBottom)" />
-            <circle cx="64" cy="56" r="15" fill="url(#leavesBottom)" />
+            {/* Boy Neck */}
+            <path d="M 44 54 L 56 54 L 54 62 L 46 62 Z" fill="#FDBA74" />
             
-            <circle cx="28" cy="42" r="16" fill="url(#leavesMid)" />
-            <circle cx="72" cy="42" r="16" fill="url(#leavesMid)" />
-            <circle cx="50" cy="46" r="18" fill="url(#leavesMid)" />
+            {/* Boy Head/Face */}
+            <path d="M 34 38 C 34 26 40 22 50 22 C 60 22 66 26 66 38 C 66 50 60 54 50 54 C 40 54 34 50 34 38 Z" fill="url(#skinGrad)" />
+            
+            {/* Boy Ears */}
+            <circle cx="33" cy="38" r="4" fill="#FDBA74" />
+            <circle cx="67" cy="38" r="4" fill="#FDBA74" />
+            
+            {/* Boy Hair */}
+            <path d="M 32 34 C 32 20 42 14 50 14 C 58 14 68 20 68 34 C 64 26 58 24 50 24 C 42 24 36 26 32 34 Z" fill="url(#hairGrad)" />
+            {/* Hair bangs */}
+            <path d="M 36 28 C 40 25 44 26 46 29 C 48 26 52 25 56 28 L 54 22 Z" fill="url(#hairGrad)" />
 
-            <circle cx="38" cy="28" r="15" fill="url(#leavesTop)" />
-            <circle cx="62" cy="28" r="15" fill="url(#leavesTop)" />
-            <circle cx="50" cy="22" r="16" fill="url(#leavesTop)" />
+            {/* Scientific Glasses (representing student intelligence) */}
+            <rect x="37" y="32" width="10" height="8" rx="2" stroke="#60A5FA" strokeWidth="2.5" fill="none" />
+            <rect x="53" y="32" width="10" height="8" rx="2" stroke="#60A5FA" strokeWidth="2.5" fill="none" />
+            <line x1="47" y1="36" x2="53" y2="36" stroke="#60A5FA" strokeWidth="2.5" />
             
-            {/* Organic details / highlights for rich cartoon finish */}
-            <circle cx="48" cy="18" r="2.2" fill="#D1FAE5" opacity="0.65" />
-            <circle cx="34" cy="24" r="1.5" fill="#D1FAE5" opacity="0.5" />
-            <circle cx="64" cy="24" r="1.5" fill="#D1FAE5" opacity="0.5" />
-            <circle cx="53" cy="40" r="1.8" fill="#A7F3D0" opacity="0.4" />
+            {/* Eyes */}
+            <circle cx="42" cy="36" r="1.5" fill="#0F172A" />
+            <circle cx="58" cy="36" r="1.5" fill="#0F172A" />
+            
+            {/* Cheerful Smile */}
+            <path d="M 46 45 Q 50 49 54 45" stroke="#9A3412" strokeWidth="2" strokeLinecap="round" fill="none" />
+
+            {/* Glowing Study Book (resting in front of boy) */}
+            <path d="M 24 74 C 24 74 36 71 50 75 C 64 71 76 74 76 74 L 74 88 C 74 88 62 85 50 89 C 38 85 26 88 26 88 Z" fill="url(#bookGrad)" stroke="#047857" strokeWidth="1" />
+            {/* Book Pages */}
+            <path d="M 27 75 Q 38 72 50 76 Q 62 72 73 75 L 71 86 Q 60 83 50 87 Q 40 83 29 86 Z" fill="#FFFFFF" />
+            {/* Page lines & formulas symbol */}
+            <line x1="33" y1="78" x2="43" y2="78" stroke="#10B981" strokeWidth="1" opacity="0.6" />
+            <line x1="33" y1="81" x2="41" y2="81" stroke="#10B981" strokeWidth="1" opacity="0.6" />
+            <line x1="57" y1="78" x2="67" y2="78" stroke="#10B981" strokeWidth="1" opacity="0.6" />
+            <line x1="57" y1="81" x2="65" y2="81" stroke="#10B981" strokeWidth="1" opacity="0.6" />
+          </svg>
+        );
+
+      case 'robot':
+        return (
+          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full filter drop-shadow-[0_12px_24px_rgba(20,184,166,0.35)]">
+            <defs>
+              <linearGradient id="botDome" x1="20" y1="15" x2="80" y2="45" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#14B8A6" />
+                <stop offset="50%" stopColor="#0D9488" />
+                <stop offset="100%" stopColor="#115E59" />
+              </linearGradient>
+              <linearGradient id="botPlate" x1="20" y1="40" x2="80" y2="90" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#0F172A" />
+                <stop offset="100%" stopColor="#020617" />
+              </linearGradient>
+              <linearGradient id="botEye" x1="30" y1="32" x2="70" y2="38" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#38BDF8" />
+                <stop offset="100%" stopColor="#0284C7" />
+              </linearGradient>
+            </defs>
+            
+            {/* Ambient Shadow */}
+            <ellipse cx="50" cy="94" rx="28" ry="4" fill="#000000" opacity="0.5" filter="blur(2.5px)" />
+            
+            {/* Neck Join */}
+            <rect x="44" y="50" width="12" height="8" rx="2" fill="#64748B" />
+            
+            {/* Robot Main Rounded Head Dome */}
+            <path d="M 22 45 C 22 24 34 16 50 16 C 66 16 78 24 78 45 C 78 51 72 54 50 54 C 28 54 22 51 22 45 Z" fill="url(#botDome)" stroke="#0F766E" strokeWidth="1" />
+            
+            {/* Ear Antennas */}
+            <rect x="18" y="34" width="4" height="12" rx="2" fill="#0D9488" />
+            <rect x="78" y="34" width="4" height="12" rx="2" fill="#0D9488" />
+            
+            {/* Robot Visor Area */}
+            <path d="M 28 30 H 72 V 42 H 28 Z" fill="#020617" rx="6" />
+            {/* Glowing visor screen */}
+            <rect x="30" y="32" width="40" height="8" rx="4" fill="url(#botEye)" />
+            
+            {/* Expressive Glowing Eyes */}
+            <circle cx="40" cy="36" r="2.5" fill="#FFFFFF" className="animate-pulse" />
+            <circle cx="60" cy="36" r="2.5" fill="#FFFFFF" className="animate-pulse" />
+            
+            {/* Mouth / LED Wavebar */}
+            <path d="M 42 47 H 58" stroke="#38BDF8" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
+
+            {/* Glowing Crown Antenna on top */}
+            <line x1="50" y1="16" x2="50" y2="6" stroke="#14B8A6" strokeWidth="3" />
+            <circle cx="50" cy="5" r="3.5" fill="#38BDF8" />
+            <circle cx="50" cy="5" r="6" stroke="#38BDF8" strokeWidth="1" opacity="0.5" className="animate-ping" />
+
+            {/* Robot Body / Chassis */}
+            <path d="M 26 58 C 26 58 32 54 50 54 C 68 54 74 58 74 58 L 70 88 H 30 Z" fill="url(#botPlate)" stroke="#1E293B" strokeWidth="1" />
+            
+            {/* Glowing Core reactor chest light */}
+            <circle cx="50" cy="72" r="8" fill="#14B8A6" opacity="0.2" />
+            <circle cx="50" cy="72" r="5" fill="#14B8A6" stroke="#FFFFFF" strokeWidth="1.5" />
+            
+            {/* Circuit Line decorations on chest */}
+            <path d="M 36 66 L 42 72" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M 64 66 L 58 72" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         );
 

@@ -95,7 +95,7 @@ export interface UserProgress {
   referralCode?: string;
   referralWallet?: number;
   onboarded?: boolean;
-  mentorPreference?: 'kalu' | 'buddhu' | 'both';
+  mentorPreference?: 'analytical' | 'visual' | 'both';
   storagePermissionGranted?: boolean;
 }
 

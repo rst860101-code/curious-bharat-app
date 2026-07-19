@@ -19,6 +19,7 @@ import {
 import { ChatMessage, UserProgress } from '../types';
 import { translations } from '../lib/translations';
 import { playSound } from '../utils/audio';
+import ThreeDElement from './ThreeDElement';
 
 interface AIAssistantProps {
   currentChapterTitle?: string;
@@ -455,13 +456,11 @@ export default function AIAssistant({
     });
   };
 
-  const TricolorAshokChakra = ({ className = "w-10 h-10" }: { className?: string }) => (
-    <div className="relative flex items-center justify-center select-none scale-105 my-3">
-      {/* Premium Glow Ring */}
-      <div className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-[#4F9DFF] via-blue-400 to-[#14b8a6] opacity-75 blur-[3px] animate-[spin_8s_linear_infinite]"></div>
-      <div className="relative bg-zinc-950 p-2 rounded-full border border-white/10 shadow-xl flex items-center justify-center">
-        <Sparkles className="w-5 h-5 text-blue-400 animate-pulse" id="ai-glowing-logo-icon" />
-      </div>
+  const BharatRobotAvatar = ({ className = "w-16 h-16" }: { className?: string }) => (
+    <div className={`relative flex items-center justify-center select-none ${className}`}>
+      {/* Premium Glow Aura */}
+      <div className="absolute -inset-3 rounded-full bg-[#14b8a6]/15 opacity-60 blur-[8px] animate-pulse"></div>
+      <ThreeDElement type="robot" className="w-full h-full relative z-10" />
     </div>
   );
 
@@ -493,7 +492,7 @@ export default function AIAssistant({
           {/* Centered Main Minimalist Section (Image 1 reference) */}
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8 max-w-xl mx-auto w-full">
             <div className="flex flex-col items-center space-y-4">
-              <TricolorAshokChakra className="w-12 h-12" />
+              <BharatRobotAvatar className="w-24 h-24 sm:w-28 sm:h-28" />
               <h2 className={`text-2xl sm:text-3xl font-extrabold tracking-tight font-sans ${isDarkMode ? 'text-white' : 'text-slate-900'} leading-snug`}>
                 {appLanguage === 'hi' ? 'भारत AI से कुछ भी पूछें' : 'Ask Anything to Bharat AI'}
               </h2>
@@ -658,8 +657,8 @@ export default function AIAssistant({
                 className={`flex items-start gap-3.5 ${isUser ? 'justify-end' : 'justify-start'}`}
               >
                 {!isUser && (
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-1 ${isDarkMode ? 'bg-zinc-900 border border-zinc-800 text-white' : 'bg-orange-50 border border-orange-100 text-orange-600'}`}>
-                    <Brain className="w-4 h-4" />
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-1 p-0.5 ${isDarkMode ? 'bg-zinc-900 border border-zinc-800' : 'bg-teal-50 border border-teal-150 text-teal-600'}`}>
+                    <ThreeDElement type="robot" className="w-full h-full" />
                   </div>
                 )}
 
@@ -679,8 +678,8 @@ export default function AIAssistant({
 
           {isTyping && (
             <div className="flex items-start gap-3.5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-1 animate-spin ${isDarkMode ? 'bg-zinc-900 border border-zinc-800 text-white' : 'bg-orange-50 border border-orange-100 text-orange-600'}`}>
-                <Brain className="w-4 h-4" />
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-1 p-0.5 animate-pulse ${isDarkMode ? 'bg-zinc-900 border border-zinc-800' : 'bg-teal-50 border border-teal-150 text-teal-600'}`}>
+                <ThreeDElement type="robot" className="w-full h-full" />
               </div>
               <div className={`rounded-2xl rounded-tl-none px-5 py-3.5 flex items-center gap-1 shadow-md ${isDarkMode ? 'bg-zinc-900 border border-zinc-850' : 'bg-white border border-orange-100'}`}>
                 <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0.2s] ${isDarkMode ? 'bg-white' : 'bg-orange-600'}`}></div>

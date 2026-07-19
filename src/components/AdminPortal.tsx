@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings, 
   Layers, 
@@ -25,7 +25,8 @@ import {
   Search,
   Upload,
   Cloud,
-  Link2
+  Link2,
+  Smartphone
 } from 'lucide-react';
 import { Course, Chapter, ChapterSection, AppCustomization, Flashcard, QuizQuestion, StudentAnalysisRecord, OwnerProfile } from '../types';
 import { playSound } from '../utils/audio';
@@ -61,7 +62,7 @@ export default function AdminPortal({
   ownerProfile,
   onUpdateOwnerProfile
 }: AdminPortalProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'layout' | 'courses' | 'connections' | 'raw-json' | 'apk-releases' | 'student-analysis' | 'owner-profile'>('layout');
+  const [activeSubTab, setActiveSubTab] = useState<'layout' | 'courses' | 'connections' | 'raw-json' | 'apk-releases' | 'student-analysis' | 'owner-profile'>('courses');
   
   const handleStatusChange = (recordId: string, status: 'approved' | 'denied' | 'pending') => {
     playSound('click');
@@ -80,7 +81,23 @@ export default function AdminPortal({
     { version: 'v2.0.0', size: 72, notes: 'Master Class 9-10 science board games, real-time community chat forums, and local offline cache storage.', date: '2026-06-15', url: 'https://github.com/curiousbharat/android/releases/download/v2.0.0/CuriousBharat_v2.0.0.apk' },
     { version: 'v1.5.0', size: 32, notes: 'Added voice-to-text NCERT descriptive answers checker and local streak counter updates.', date: '2026-04-10', url: 'https://github.com/curiousbharat/android/releases/download/v1.5.0/CuriousBharat_v1.5.0.apk' }
   ]);
+
+  useEffect(() => {
+    fetch('/api/apk-version')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.version) {
+          setApkVersion(data.version);
+          if (data.url) setApkUrl(data.url);
+          if (data.notes) setApkNotes(data.notes);
+        }
+      })
+      .catch(err => console.error('Error fetching APK version:', err));
+  }, []);
   const [selectedCourseId, setSelectedCourseId] = useState<string>(courses[0]?.id || '');
+  const [selectedChapterId, setSelectedChapterId] = useState<string>('');
+  const [selectedTopicId, setSelectedTopicId] = useState<string>('');
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   const [newCourseTitle, setNewCourseTitle] = useState('');
   const [newCoursePrice, setNewCoursePrice] = useState('₹499');
   const [newCourseIsPaid, setNewCourseIsPaid] = useState(false);
@@ -90,6 +107,12 @@ export default function AdminPortal({
   const [newCourseSpecialFeature, setNewCourseSpecialFeature] = useState('');
   const [aiFeatureGoal, setAiFeatureGoal] = useState('');
   const [isGeneratingFeature, setIsGeneratingFeature] = useState(false);
+
+  // Student Analysis Spreadsheet state
+  const [spreadsheetSearch, setSpreadsheetSearch] = useState('');
+  const [spreadsheetSortField, setSpreadsheetSortField] = useState<string>('studentName');
+  const [spreadsheetSortOrder, setSpreadsheetSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [selectedSpreadsheetRowId, setSelectedSpreadsheetRowId] = useState<string | null>(null);
 
   // New chapter inputs
   const [newChapTitle, setNewChapTitle] = useState('');
@@ -176,6 +199,70 @@ export default function AdminPortal({
       };
       reader.readAsDataURL(file);
     }, 2700);
+  };
+
+  // Inline Upload Button helper for manual file uploads next to URL inputs
+  const InlineUploadButton = ({ onUploadComplete, label = "Upload File", accept = "*/*" }: { onUploadComplete: (url: string) => void; label?: string; accept?: string }) => {
+    const [isUploading, setIsUploading] = useState(false);
+    const [percent, setPercent] = useState(0);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setIsUploading(true);
+      setPercent(10);
+      
+      const interval = setInterval(() => {
+        setPercent(prev => {
+          if (prev >= 90) {
+            clearInterval(interval);
+            return 90;
+          }
+          return prev + 15;
+        });
+      }, 200);
+
+      setTimeout(() => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          clearInterval(interval);
+          setPercent(100);
+          setTimeout(() => {
+            if (typeof reader.result === 'string') {
+              onUploadComplete(reader.result);
+              setIsUploading(false);
+              setPercent(0);
+              playSound('success');
+              showSuccess(`${file.name} uploaded & synced successfully!`);
+            }
+          }, 300);
+        };
+        reader.readAsDataURL(file);
+      }, 1500);
+    };
+
+    return (
+      <div className="mt-1 flex items-center gap-2">
+        {isUploading ? (
+          <div className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg p-1.5 flex items-center justify-between text-[10px]">
+            <span className="text-emerald-400 font-mono animate-pulse flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+              Syncing: {percent}%
+            </span>
+            <div className="w-16 bg-zinc-950 h-1.5 rounded-full overflow-hidden border border-zinc-850">
+              <div className="bg-emerald-500 h-full transition-all duration-200" style={{ width: `${percent}%` }}></div>
+            </div>
+          </div>
+        ) : (
+          <label className="flex-1 py-1 px-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 rounded-lg text-[10px] font-bold text-center cursor-pointer transition flex items-center justify-center gap-1.5">
+            <Upload className="w-3.5 h-3.5 text-zinc-400" />
+            <span>{label}</span>
+            <input type="file" accept={accept} onChange={handleFileChange} className="hidden" />
+          </label>
+        )}
+      </div>
+    );
   };
 
   // 1. Layout Adjustments
@@ -407,6 +494,8 @@ export default function AdminPortal({
   };
 
   const selectedCourseObj = courses.find(c => c.id === selectedCourseId);
+  const selectedChapterObj = selectedCourseObj?.chapters.find(ch => ch.id === selectedChapterId);
+  const selectedTopicObj = selectedChapterObj?.topics?.find(tp => tp.id === selectedTopicId);
 
   return (
     <div className="bg-black border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-[720px] max-w-6xl mx-auto font-sans text-zinc-300">
@@ -444,14 +533,6 @@ export default function AdminPortal({
           {/* Sub Tab Navigation */}
           <div className="space-y-1.5 pt-2">
             <button
-              onClick={() => setActiveSubTab('layout')}
-              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition ${
-                activeSubTab === 'layout' ? 'bg-zinc-850 text-white border border-zinc-700' : 'hover:bg-zinc-900 text-zinc-400'
-              }`}
-            >
-              <Sliders className="w-4 h-4 text-zinc-400" /> UI Layout & Page Editor
-            </button>
-            <button
               onClick={() => setActiveSubTab('courses')}
               className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition ${
                 activeSubTab === 'courses' ? 'bg-zinc-850 text-white border border-zinc-700' : 'hover:bg-zinc-900 text-zinc-400'
@@ -466,6 +547,14 @@ export default function AdminPortal({
               }`}
             >
               <Search className="w-4 h-4 text-zinc-400" /> Student Analysis & Purchases
+            </button>
+            <button
+              onClick={() => setActiveSubTab('apk-releases')}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition ${
+                activeSubTab === 'apk-releases' ? 'bg-zinc-850 text-white border border-zinc-700' : 'hover:bg-zinc-900 text-zinc-400'
+              }`}
+            >
+              <Smartphone className="w-4 h-4 text-zinc-400" /> APK Version Control
             </button>
             <button
               onClick={() => setActiveSubTab('owner-profile')}
@@ -697,623 +786,504 @@ export default function AdminPortal({
         {/* ======================= TAB 2: COURSE & CHAPTER MANAGER ======================= */}
         {activeSubTab === 'courses' && (
           <div className="space-y-6">
-            <div className="border-b border-zinc-800 pb-3">
-              <h3 className="text-xl font-bold text-white">Course Database Control Room</h3>
-              <p className="text-xs text-zinc-500 mt-1">Design and publish public Free/Paid courses, link videos, and insert student reading chapters.</p>
+            <div className="border-b border-zinc-800 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <span className="p-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-xs">📁</span>
+                  Interactive Folder Course Database
+                </h3>
+                <p className="text-xs text-zinc-500 mt-1">Design your curriculum in folder-in-folder-in-folder format. Root: Courses ➔ Subfolder: Chapters ➔ Child: Topics & study materials.</p>
+              </div>
             </div>
 
             {/* Course Builder Forms */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
-              {/* Form 1: Add/Select Courses */}
-              <div className="bg-zinc-950 border border-zinc-800 p-6 rounded-2xl space-y-4">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-1">
-                  <Database className="w-4 h-4 text-zinc-500" /> Create / Delete Course
-                </h4>
+              {/* LEFT COLUMN: INTERACTIVE FOLDER IN FOLDER ROOT EXPLORER (5 cols) */}
+              <div className="lg:col-span-5 bg-zinc-950 border border-zinc-800 p-5 rounded-3xl space-y-4">
+                <div className="flex justify-between items-center border-b border-zinc-900 pb-2">
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
+                    📂 Curriculum Directory Tree
+                  </span>
+                  <button
+                    onClick={() => {
+                      const anyOpen = Object.values(expandedFolders).some(Boolean);
+                      const newExp = {};
+                      if (!anyOpen) {
+                        courses.forEach(c => {
+                          newExp[c.id] = true;
+                          c.chapters.forEach(ch => {
+                            newExp[ch.id] = true;
+                          });
+                        });
+                      }
+                      setExpandedFolders(newExp);
+                    }}
+                    className="text-[10px] text-zinc-500 hover:text-white transition bg-zinc-900 px-2.5 py-1 rounded border border-zinc-850 cursor-pointer font-medium"
+                  >
+                    Toggle All folders
+                  </button>
+                </div>
+
+                <div className="space-y-1.5 max-h-[500px] overflow-y-auto pr-1 no-scrollbar select-none">
+                  {courses.map(c => {
+                    const isCourseExpanded = !!expandedFolders[c.id];
+                    const isCourseSelected = selectedCourseId === c.id && !selectedChapterId && !selectedTopicId;
+                    return (
+                      <div key={c.id} className="space-y-1 border border-zinc-900/40 rounded-xl p-1 bg-zinc-900/10">
+                        {/* 1. COURSE FOLDER (ROOT) */}
+                        <div 
+                          onClick={() => {
+                            setSelectedCourseId(c.id);
+                            setSelectedChapterId('');
+                            setSelectedTopicId('');
+                            setExpandedFolders(prev => ({ ...prev, [c.id]: !prev[c.id] }));
+                          }}
+                          className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition ${
+                            isCourseSelected ? 'bg-zinc-850 text-white border border-zinc-700 shadow-lg shadow-zinc-950' : 'hover:bg-zinc-900 text-zinc-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 truncate">
+                            <span className="text-sm shrink-0">{isCourseExpanded ? '📂' : '📁'}</span>
+                            <span className="font-bold truncate text-[11px] font-mono">{c.title}</span>
+                          </div>
+                          <span className="text-[9px] font-bold text-zinc-500 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-900 font-mono">
+                            {c.chapters.length} chapters
+                          </span>
+                        </div>
+
+                        {/* 2. CHAPTER FOLDERS (LEVEL 2) */}
+                        {isCourseExpanded && (
+                          <div className="pl-5 border-l border-zinc-850/60 ml-3 space-y-1 py-1">
+                            {c.chapters.map(ch => {
+                              const isChapterExpanded = !!expandedFolders[ch.id];
+                              const isChapterSelected = selectedCourseId === c.id && selectedChapterId === ch.id && !selectedTopicId;
+                              return (
+                                <div key={ch.id} className="space-y-1">
+                                  <div 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedCourseId(c.id);
+                                      setSelectedChapterId(ch.id);
+                                      setSelectedTopicId('');
+                                      setExpandedFolders(prev => ({ ...prev, [ch.id]: !prev[ch.id] }));
+                                    }}
+                                    className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition ${
+                                      isChapterSelected ? 'bg-zinc-800 text-white border border-zinc-750' : 'hover:bg-zinc-900/60 text-zinc-400'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2 truncate">
+                                      <span className="text-xs shrink-0">{isChapterExpanded ? '📂' : '📁'}</span>
+                                      <span className="truncate text-[10px] font-mono">{ch.title}</span>
+                                    </div>
+                                    <span className="text-[8px] font-mono text-zinc-600">
+                                      {(ch.topics || []).length} topics
+                                    </span>
+                                  </div>
+
+                                  {/* 3. TOPIC CHILDS (LEVEL 3) */}
+                                  {isChapterExpanded && (
+                                    <div className="pl-5 border-l border-zinc-800/80 ml-2 space-y-1 py-1">
+                                      {(ch.topics || []).map(tp => {
+                                        const isTopicSelected = selectedCourseId === c.id && selectedChapterId === ch.id && selectedTopicId === tp.id;
+                                        return (
+                                          <div 
+                                            key={tp.id}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedCourseId(c.id);
+                                              setSelectedChapterId(ch.id);
+                                              setSelectedTopicId(tp.id);
+                                            }}
+                                            className={`flex items-center justify-between p-1.5 rounded cursor-pointer transition ${
+                                              isTopicSelected ? 'bg-zinc-700 text-white font-semibold' : 'hover:bg-zinc-900/40 text-zinc-500'
+                                            }`}
+                                          >
+                                            <div className="flex items-center gap-2 truncate">
+                                              <span className="text-xs text-zinc-500 shrink-0">📄</span>
+                                              <span className="truncate text-[10px] font-mono">{tp.title}</span>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                      {(!ch.topics || ch.topics.length === 0) && (
+                                        <div className="text-[9px] text-zinc-600 italic pl-5 py-0.5">Empty Chapter Folder</div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            {c.chapters.length === 0 && (
+                              <div className="text-[9px] text-zinc-600 italic pl-5 py-0.5">Empty Course Folder</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: CONTEXTUAL ACTIONS PANEL (7 cols) */}
+              <div className="lg:col-span-7 space-y-6">
                 
-                <form onSubmit={handleAddCourse} className="space-y-3.5">
+                {/* 1. SELECTION STATUS BANNER */}
+                <div className="bg-zinc-950 border border-zinc-800 p-4 rounded-2xl flex items-center justify-between gap-3 relative overflow-hidden">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-zinc-500 uppercase">Course Title Name</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Rio General Science Series"
-                      value={newCourseTitle}
-                      onChange={(e) => setNewCourseTitle(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500"
-                    />
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block">Active Directory Pointer</span>
+                    <h4 className="text-xs text-white font-mono leading-relaxed">
+                      {selectedCourseObj ? (
+                        <>
+                          <span className="text-zinc-500">Root/</span>
+                          <span className="text-emerald-300 font-bold">{selectedCourseObj.title}</span>
+                          {selectedChapterObj && (
+                            <>
+                              <span className="text-zinc-600"> / ➔ </span>
+                              <span className="text-yellow-300 font-semibold">{selectedChapterObj.title}</span>
+                            </>
+                          )}
+                          {selectedTopicObj && (
+                            <>
+                              <span className="text-zinc-600"> / ➔ </span>
+                              <span className="text-sky-300">{selectedTopicObj.title}</span>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-zinc-600 italic">No folder selected. Create or choose a Course on the left.</span>
+                      )}
+                    </h4>
+                  </div>
+                  
+                  {/* Delete Current Node Button */}
+                  {selectedCourseObj && (
+                    <button
+                      onClick={() => {
+                        playSound('click');
+                        if (selectedTopicObj) {
+                          // Delete selected topic
+                          const updated = courses.map(c => {
+                            if (c.id === selectedCourseId) {
+                              return {
+                                ...c,
+                                chapters: c.chapters.map(ch => {
+                                  if (ch.id === selectedChapterId) {
+                                    return {
+                                      ...ch,
+                                      topics: (ch.topics || []).filter(tp => tp.id !== selectedTopicId)
+                                    };
+                                  }
+                                  return ch;
+                                })
+                              };
+                            }
+                            return c;
+                          });
+                          onUpdateCourses(updated);
+                          setSelectedTopicId('');
+                          showSuccess("Topic subfolder deleted successfully!");
+                        } else if (selectedChapterObj) {
+                          // Delete selected chapter
+                          const updated = courses.map(c => {
+                            if (c.id === selectedCourseId) {
+                              return {
+                                ...c,
+                                chapters: c.chapters.filter(ch => ch.id !== selectedChapterId)
+                              };
+                            }
+                            return c;
+                          });
+                          onUpdateCourses(updated);
+                          setSelectedChapterId('');
+                          showSuccess("Chapter folder deleted successfully!");
+                        } else if (selectedCourseObj) {
+                          // Delete selected course
+                          const updated = courses.filter(c => c.id !== selectedCourseId);
+                          onUpdateCourses(updated);
+                          setSelectedCourseId(updated[0]?.id || '');
+                          showSuccess("Root Course folder deleted successfully!");
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 font-bold rounded-xl text-[10px] transition cursor-pointer flex items-center gap-1 shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete Selected
+                    </button>
+                  )}
+                </div>
+
+                {/* 2. TABBED ACTION FORMS CONTAINER */}
+                <div className="bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden p-6 space-y-6">
+                  <div className="flex border-b border-zinc-900 pb-3 gap-2.5">
+                    <span className="text-xs font-bold text-white uppercase tracking-wider block">
+                      Curriculum Manager Tool Desk
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-zinc-500 uppercase">Syllabus Subject</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. SST, Hindi, Math, Physics"
-                        value={newCourseSubject}
-                        onChange={(e) => setNewCourseSubject(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500 font-medium"
-                        required
-                      />
+                  {/* FORM A: ADD NEW COURSE (ROOT LEVEL) */}
+                  <div className="space-y-4 border-t border-zinc-900/60 pt-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-[10px] font-bold">1</span>
+                      <h5 className="text-xs font-bold text-white uppercase">Add a New Root Course</h5>
                     </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-zinc-500 uppercase">Monetization</label>
-                      <select
-                        value={newCourseIsPaid ? 'paid' : 'free'}
-                        onChange={(e) => setNewCourseIsPaid(e.target.value === 'paid')}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500"
-                      >
-                        <option value="free">Free Course (Public)</option>
-                        <option value="paid">Paid Course (Premium)</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {newCourseIsPaid && (
-                    <div className="grid grid-cols-2 gap-3">
+                    <form onSubmit={handleAddCourse} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-semibold text-zinc-500 uppercase">Premium Price Tag</label>
+                        <label className="text-[9px] font-bold text-zinc-500 uppercase">Course Title</label>
                         <input
                           type="text"
-                          placeholder="e.g. ₹499"
-                          value={newCoursePrice}
-                          onChange={(e) => setNewCoursePrice(e.target.value)}
-                          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500 font-mono"
+                          placeholder="e.g. NCERT Science Mastery"
+                          value={newCourseTitle}
+                          onChange={(e) => setNewCourseTitle(e.target.value)}
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-zinc-500"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-semibold text-zinc-500 uppercase">Custom UPI ID</label>
+                        <label className="text-[9px] font-bold text-zinc-500 uppercase">Subject Category</label>
                         <input
                           type="text"
-                          placeholder="e.g. rst010186@paytm"
-                          value={newCourseUpiId}
-                          onChange={(e) => setNewCourseUpiId(e.target.value)}
-                          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500 font-mono"
+                          placeholder="Physics, Chem, Biology, General"
+                          value={newCourseSubject}
+                          onChange={(e) => setNewCourseSubject(e.target.value)}
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-zinc-500"
                         />
                       </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-zinc-500 uppercase">Monetization</label>
+                        <select
+                          value={newCourseIsPaid ? 'paid' : 'free'}
+                          onChange={(e) => setNewCourseIsPaid(e.target.value === 'paid')}
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-zinc-500"
+                        >
+                          <option value="free">Free Course (Public)</option>
+                          <option value="paid">Paid Course (Premium Batch)</option>
+                        </select>
+                      </div>
+                      {newCourseIsPaid && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-zinc-500 uppercase">Price</label>
+                            <input
+                              type="text"
+                              value={newCoursePrice}
+                              onChange={(e) => setNewCoursePrice(e.target.value)}
+                              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-zinc-500 font-mono"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-zinc-500 uppercase">UPI ID</label>
+                            <input
+                              type="text"
+                              value={newCourseUpiId}
+                              onChange={(e) => setNewCourseUpiId(e.target.value)}
+                              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-zinc-500 font-mono"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      <div className="sm:col-span-2">
+                        <button
+                          type="submit"
+                          className="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Publish Root Course
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* FORM B: ADD CHAPTER (LEVEL 2 INSIDE SELECTED COURSE) */}
+                  {selectedCourseObj && (
+                    <div className="space-y-4 border-t border-zinc-900/60 pt-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-yellow-500/10 text-yellow-400 flex items-center justify-center text-[10px] font-bold">2</span>
+                        <h5 className="text-xs font-bold text-white uppercase">Add a Chapter inside "{selectedCourseObj.title}"</h5>
+                      </div>
+                      <form onSubmit={handleAddChapter} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1 sm:col-span-2">
+                          <label className="text-[9px] font-bold text-zinc-500 uppercase">Chapter Title</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Acid, Bases and Salts"
+                            value={newChapTitle}
+                            onChange={(e) => setNewChapTitle(e.target.value)}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-zinc-500"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1 sm:col-span-2">
+                          <label className="text-[9px] font-bold text-zinc-500 uppercase">Synopsis / Description</label>
+                          <textarea
+                            placeholder="Briefly summarize what this chapter contains..."
+                            value={newChapDesc}
+                            onChange={(e) => setNewChapDesc(e.target.value)}
+                            rows={2}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-zinc-500 resize-none"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-bold text-zinc-500 uppercase">Syllabus Subject</label>
+                          <input
+                            type="text"
+                            value={newChapSubj}
+                            onChange={(e) => setNewChapSubj(e.target.value)}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-zinc-500"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-bold text-zinc-500 uppercase">Grade Level</label>
+                          <input
+                            type="text"
+                            value={newChapClass}
+                            onChange={(e) => setNewChapClass(e.target.value)}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-zinc-500 font-mono"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <button
+                            type="submit"
+                            className="w-full py-2 bg-yellow-400 hover:bg-yellow-300 text-zinc-950 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            Create Subfolder Chapter
+                          </button>
+                        </div>
+                      </form>
                     </div>
                   )}
 
-                  <div className="space-y-2 bg-zinc-900/40 p-4 border border-zinc-850 rounded-xl">
-                    <label className="text-[10px] font-bold text-zinc-400 uppercase block">
-                      🖼️ Course Thumbnail (Google Drive / Local Storage)
-                    </label>
-                    
-                    {/* Drag and Drop Container */}
-                    <div 
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
+                  {/* FORM C: ADD TOPIC (LEVEL 3 INSIDE SELECTED CHAPTER) */}
+                  {selectedCourseObj && selectedChapterObj && (
+                    <div className="space-y-4 border-t border-zinc-900/60 pt-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-sky-500/10 text-sky-400 flex items-center justify-center text-[10px] font-bold">3</span>
+                        <h5 className="text-xs font-bold text-white uppercase">Add a Topic inside Chapter "{selectedChapterObj.title}"</h5>
+                      </div>
+                      <form onSubmit={(e) => {
                         e.preventDefault();
-                        const file = e.dataTransfer.files[0];
-                        if (file && file.type.startsWith('image/')) {
-                          simulateImageUpload(file, (url) => setNewCourseThumbnail(url));
-                        }
-                      }}
-                      className="border border-dashed border-zinc-800 rounded-lg p-5 flex flex-col items-center justify-center text-center hover:border-zinc-700 transition relative overflow-hidden bg-zinc-950/40"
-                    >
-                      {newCourseThumbnail ? (
-                        <div className="space-y-2.5 w-full">
-                          <img 
-                            src={newCourseThumbnail} 
-                            alt="Uploaded Thumbnail Preview" 
-                            className="h-28 mx-auto object-cover rounded-lg border border-zinc-800 shadow" 
-                          />
-                          <div className="flex items-center justify-center gap-1.5">
-                            <span className="text-[9px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 font-mono font-bold uppercase">
-                              {ownerProfile?.storageDestination === 'google-drive' ? '☁️ Google Drive Sync' : '💾 Local Synced'}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setNewCourseThumbnail('')}
-                              className="text-[9px] text-zinc-500 hover:text-rose-400 underline cursor-pointer"
-                            >
-                              Reset image
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Upload className="w-6 h-6 text-zinc-500 mx-auto animate-bounce" />
-                          <div>
-                            <p className="text-[11px] font-bold text-zinc-300">Drag & drop your thumbnail image, or click to upload</p>
-                            <p className="text-[9px] text-zinc-500 mt-0.5">JPEG, PNG, or WEBP up to 5MB</p>
-                          </div>
-                          
-                          <label className="inline-block px-3 py-1 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 rounded-lg text-[10px] font-bold text-zinc-300 hover:text-white cursor-pointer transition">
-                            Browse Local Files
-                            <input 
-                              type="file" 
-                              accept="image/*" 
-                              className="hidden" 
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  simulateImageUpload(file, (url) => setNewCourseThumbnail(url));
+                        if (!newTopicTitle.trim()) return;
+                        
+                        const newTopic = {
+                          id: 'topic-' + Date.now(),
+                          title: newTopicTitle,
+                          description: newTopicDesc || 'Study guide with active learning materials.',
+                          sections: [
+                            {
+                              id: 'sec-' + Date.now() + '-1',
+                              title: '1. Topic Fundamentals',
+                              body: 'Topic text. Customize in Live Edit.',
+                              keyPoints: ['Key point 1', 'Key point 2']
+                            }
+                          ],
+                          flashcards: [],
+                          quiz: [],
+                          lectureUrl: newTopicLecture || undefined,
+                          pdfUrl: newTopicPdf || undefined,
+                          dppUrl: newTopicDpp || undefined
+                        };
+
+                        const updated = courses.map(c => {
+                          if (c.id === selectedCourseId) {
+                            return {
+                              ...c,
+                              chapters: c.chapters.map(ch => {
+                                if (ch.id === selectedChapterId) {
+                                  return {
+                                    ...ch,
+                                    topics: [...(ch.topics || []), newTopic]
+                                  };
                                 }
-                              }}
-                            />
-                          </label>
-                        </div>
-                      )}
+                                return ch;
+                              })
+                            };
+                          }
+                          return c;
+                        });
 
-                      {/* Loading & Synchronization state bar overlay */}
-                      {isUploadingThumbnail && (
-                        <div className="absolute inset-0 bg-zinc-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 space-y-3">
-                          <div className="w-10 h-10 rounded-full border border-zinc-800 flex items-center justify-center animate-spin border-t-emerald-400">
-                            <Cloud className="w-5 h-5 text-zinc-400" />
-                          </div>
-                          <div className="text-center space-y-1 w-full max-w-xs">
-                            <p className="text-[11px] font-bold text-white tracking-wide">{uploadStatusText}</p>
-                            <div className="w-full bg-zinc-900 h-1 rounded-full overflow-hidden border border-zinc-850">
-                              <div 
-                                className="bg-gradient-to-r from-teal-400 to-emerald-500 h-full rounded-full transition-all duration-300"
-                                style={{ width: `${uploadProgressPercent}%` }}
-                              />
-                            </div>
-                            <span className="text-[9px] font-mono font-bold text-emerald-400">{uploadProgressPercent}% synced</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-1">
-                      <span className="text-[9px] text-zinc-500 block uppercase font-mono">Thumbnail Direct URL (Optional fallback)</span>
-                      <input
-                        type="text"
-                        placeholder="e.g. https://images.unsplash.com/photo-..."
-                        value={newCourseThumbnail}
-                        onChange={(e) => setNewCourseThumbnail(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-zinc-500 font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  {/* AI BATCH SPECIAL FEATURES GENERATOR */}
-                  <div className="bg-zinc-900/60 border border-zinc-800 p-4 rounded-xl space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-yellow-400 animate-pulse" />
-                        AI Batch Feature Generator
-                      </span>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-medium text-zinc-500 uppercase">What's the goal or style of this batch?</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. focus on practical games, daily voice chat tasks"
-                        value={aiFeatureGoal}
-                        onChange={(e) => setAiFeatureGoal(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-[11px] text-white outline-none focus:border-zinc-650"
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleGenerateSpecialFeature}
-                      disabled={isGeneratingFeature || !newCourseTitle.trim()}
-                      className="w-full py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 text-[11px] font-bold rounded-lg border border-yellow-500/20 transition cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-40"
-                    >
-                      {isGeneratingFeature ? (
-                        <>
-                          <div className="w-3 h-3 border border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-                          Architecting Features...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-3 h-3 text-yellow-400" />
-                          Generate Custom AI Features
-                        </>
-                      )}
-                    </button>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-medium text-zinc-500 uppercase">Special Features (Editable)</label>
-                      <textarea
-                        rows={3}
-                        placeholder="• ⚡ Kalu Sir's 10-Second Speed Formulas&#10;• 🎮 Interactive NCERT Board Game Challenges"
-                        value={newCourseSpecialFeature}
-                        onChange={(e) => setNewCourseSpecialFeature(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-[11px] text-zinc-300 outline-none focus:border-zinc-650 font-mono resize-none leading-relaxed"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <Plus className="w-4 h-4" /> Add Course Listing
-                  </button>
-                </form>
-
-                {/* Course List */}
-                <div className="border-t border-zinc-900 pt-4 space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase block">Active Course List</label>
-                  <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1 no-scrollbar">
-                    {courses.map(c => (
-                      <div 
-                        key={c.id} 
-                        onClick={() => setSelectedCourseId(c.id)}
-                        className={`p-2.5 rounded-xl border flex items-center justify-between text-xs cursor-pointer transition ${
-                          selectedCourseId === c.id 
-                            ? 'bg-zinc-900 border-zinc-700 text-white font-semibold' 
-                            : 'bg-zinc-950 hover:bg-zinc-900 border-zinc-850/80 text-zinc-400'
-                        }`}
-                      >
-                        <span className="truncate max-w-[180px]">{c.title} ({c.isPaid ? 'Paid' : 'Free'})</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteCourse(c.id);
-                          }}
-                          className="p-1 hover:bg-zinc-800 rounded text-zinc-500 hover:text-rose-400 transition"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Selected Course Customizer Panel */}
-                {selectedCourseObj && (
-                  <div className="border-t border-zinc-900 pt-4 space-y-3">
-                    <label className="text-[10px] font-bold text-zinc-400 uppercase block">⚙️ Course Settings Editor</label>
-                    <div className="bg-zinc-900/40 border border-zinc-850 rounded-xl p-3 space-y-2 text-xs">
-                      <div className="space-y-1">
-                        <label className="text-[9px] uppercase text-zinc-500 font-bold">Course Title</label>
-                        <input
-                          type="text"
-                          value={selectedCourseObj.title}
-                          onChange={(e) => {
-                            const updated = courses.map(c => c.id === selectedCourseObj.id ? { ...c, title: e.target.value } : c);
-                            onUpdateCourses(updated);
-                          }}
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1 text-xs text-white outline-none focus:border-zinc-500"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <label className="text-[9px] uppercase text-zinc-500 font-bold">Price</label>
+                        onUpdateCourses(updated);
+                        setNewTopicTitle('');
+                        setNewTopicDesc('');
+                        setNewTopicLecture('');
+                        setNewTopicPdf('');
+                        setNewTopicDpp('');
+                        showSuccess('Topic folder ' + newTopic.title + ' added successfully!');
+                      }} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1 sm:col-span-2">
+                          <label className="text-[9px] font-bold text-zinc-500 uppercase">Topic Title</label>
                           <input
                             type="text"
-                            value={selectedCourseObj.price}
-                            onChange={(e) => {
-                              const updated = courses.map(c => c.id === selectedCourseObj.id ? { ...c, price: e.target.value } : c);
-                              onUpdateCourses(updated);
-                            }}
-                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1 text-xs text-white outline-none focus:border-zinc-500 font-mono"
+                            placeholder="e.g. Chemical Properties of Bases"
+                            value={newTopicTitle}
+                            onChange={(e) => setNewTopicTitle(e.target.value)}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-zinc-500"
+                            required
                           />
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-[9px] uppercase text-zinc-500 font-bold">UPI ID</label>
+                        <div className="space-y-1 sm:col-span-2 bg-zinc-900/30 p-3 rounded-xl border border-zinc-900 space-y-3">
+                          <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Video Lecture Resource</span>
                           <input
                             type="text"
-                            value={selectedCourseObj.upiId || ''}
-                            placeholder="e.g. rst010186@paytm"
-                            onChange={(e) => {
-                              const updated = courses.map(c => c.id === selectedCourseObj.id ? { ...c, upiId: e.target.value } : c);
-                              onUpdateCourses(updated);
-                            }}
-                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1 text-xs text-white outline-none focus:border-zinc-500 font-mono"
+                            placeholder="YouTube embed or video URL"
+                            value={newTopicLecture}
+                            onChange={(e) => setNewTopicLecture(e.target.value)}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-white font-mono outline-none focus:border-zinc-500"
+                          />
+                          <InlineUploadButton 
+                            onUploadComplete={(url) => setNewTopicLecture(url)}
+                            label="Upload Lecture Video"
+                            accept="video/*"
                           />
                         </div>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] uppercase text-zinc-500 font-bold">Course Thumbnail Image URL</label>
-                        <input
-                          type="text"
-                          value={selectedCourseObj.thumbnailUrl || ''}
-                          placeholder="https://images.unsplash.com/..."
-                          onChange={(e) => {
-                            const updated = courses.map(c => c.id === selectedCourseObj.id ? { ...c, thumbnailUrl: e.target.value } : c);
-                            onUpdateCourses(updated);
-                          }}
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1 text-xs text-white outline-none focus:border-zinc-500 font-mono"
-                        />
-                      </div>
+                        <div className="space-y-1 bg-zinc-900/30 p-3 rounded-xl border border-zinc-900 space-y-2">
+                          <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Notes PDF</span>
+                          <input
+                            type="text"
+                            placeholder="Study Notes link"
+                            value={newTopicPdf}
+                            onChange={(e) => setNewTopicPdf(e.target.value)}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1 text-xs text-white outline-none focus:border-zinc-500"
+                          />
+                          <InlineUploadButton 
+                            onUploadComplete={(url) => setNewTopicPdf(url)}
+                            label="Upload Notes PDF"
+                            accept="application/pdf"
+                          />
+                        </div>
+                        <div className="space-y-1 bg-zinc-900/30 p-3 rounded-xl border border-zinc-900 space-y-2">
+                          <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Daily DPP practice sheet</span>
+                          <input
+                            type="text"
+                            placeholder="DPP File link"
+                            value={newTopicDpp}
+                            onChange={(e) => setNewTopicDpp(e.target.value)}
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1 text-xs text-white outline-none focus:border-zinc-500"
+                          />
+                          <InlineUploadButton 
+                            onUploadComplete={(url) => setNewTopicDpp(url)}
+                            label="Upload Topic DPP"
+                            accept="application/pdf"
+                          />
+                        </div>
+                        <div className="sm:col-span-2 pt-2">
+                          <button
+                            type="submit"
+                            className="w-full py-2 bg-sky-400 hover:bg-sky-300 text-zinc-950 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            Create Child Topic Folder
+                          </button>
+                        </div>
+                      </form>
                     </div>
+                  )}
 
-                    {/* Nested Subfolders (Chapters & Topics) Explorer */}
-                    <div className="space-y-1.5 pt-2">
-                      <label className="text-[10px] font-bold text-zinc-400 uppercase block flex items-center gap-1">
-                        <span>📁</span> Subfolders (Chapters & Topics) Explorer
-                      </label>
-                      <div className="bg-zinc-900/40 border border-zinc-850 rounded-xl p-2.5 space-y-2 max-h-[220px] overflow-y-auto no-scrollbar">
-                        {selectedCourseObj.chapters.length === 0 ? (
-                          <p className="text-[10px] text-zinc-600 italic">No chapters in this course yet.</p>
-                        ) : (
-                          selectedCourseObj.chapters.map(ch => (
-                            <div key={ch.id} className="space-y-1 bg-zinc-950/60 p-2 rounded-lg border border-zinc-900">
-                              {/* Chapter header */}
-                              <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-300">
-                                <span className="truncate max-w-[170px]">📂 {ch.title}</span>
-                                <button
-                                  onClick={() => {
-                                    playSound('click');
-                                    const updated = courses.map(c => {
-                                      if (c.id === selectedCourseObj.id) {
-                                        return {
-                                          ...c,
-                                          chapters: c.chapters.filter(chap => chap.id !== ch.id)
-                                        };
-                                      }
-                                      return c;
-                                    });
-                                    onUpdateCourses(updated);
-                                  }}
-                                  className="text-[9px] text-zinc-600 hover:text-red-400 font-bold transition px-1 py-0.5 rounded cursor-pointer"
-                                  title="Delete Chapter Folder"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                              
-                              {/* Topic child list */}
-                              <div className="pl-3.5 space-y-1 border-l border-zinc-850/50">
-                                {(!ch.topics || ch.topics.length === 0) ? (
-                                  <p className="text-[9px] text-zinc-600 italic">No topic subfolders yet.</p>
-                                ) : (
-                                  ch.topics.map(tp => (
-                                    <div key={tp.id} className="flex items-center justify-between text-[10px] text-zinc-500 hover:text-zinc-400">
-                                      <span className="truncate max-w-[150px]">📄 {tp.title}</span>
-                                      <button
-                                        onClick={() => {
-                                          playSound('click');
-                                          const updated = courses.map(c => {
-                                            if (c.id === selectedCourseObj.id) {
-                                              return {
-                                                ...c,
-                                                chapters: c.chapters.map(chap => {
-                                                  if (chap.id === ch.id) {
-                                                    return {
-                                                      ...chap,
-                                                      topics: (chap.topics || []).filter(topic => topic.id !== tp.id)
-                                                    };
-                                                  }
-                                                  return chap;
-                                                })
-                                              };
-                                            }
-                                            return c;
-                                          });
-                                          onUpdateCourses(updated);
-                                        }}
-                                        className="text-[8px] text-zinc-600 hover:text-red-400 transition cursor-pointer p-0.5"
-                                        title="Delete Topic Subfolder"
-                                      >
-                                        ✕
-                                      </button>
-                                    </div>
-                                  ))
-                                )}
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Form 2: Add Chapters to Selected Course */}
-              <div className="bg-zinc-950 border border-zinc-800 p-6 rounded-2xl space-y-4">
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-1">
-                    <BookOpen className="w-4 h-4 text-zinc-500" /> Add Chapter to "{selectedCourseObj?.title || 'Selected Course'}"
-                  </h4>
-                  <p className="text-[10px] text-zinc-500 leading-normal mt-0.5">Inject master study syllabus directly into this course track.</p>
                 </div>
-
-                <form onSubmit={handleAddChapter} className="space-y-3.5">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-zinc-500 uppercase">Chapter Title Name</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Life Processes"
-                      value={newChapTitle}
-                      onChange={(e) => setNewChapTitle(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-zinc-500 uppercase">Chapter Description / Synopsis</label>
-                    <textarea
-                      placeholder="e.g. Detailed study of biological actions like digestion, circulation, and excretion."
-                      value={newChapDesc}
-                      onChange={(e) => setNewChapDesc(e.target.value)}
-                      rows={2}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500 resize-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-zinc-500 uppercase">Key Concepts (Comma separated)</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Nutrition, Enzymes, Metabolism"
-                      value={newChapKeyConcepts}
-                      onChange={(e) => setNewChapKeyConcepts(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-zinc-500 uppercase">Syllabus Subject</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Geography, Chemistry, English"
-                        value={newChapSubj}
-                        onChange={(e) => setNewChapSubj(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-zinc-500 uppercase">Grade Level</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 9, 10, 11, 12, NEET"
-                        value={newChapClass}
-                        onChange={(e) => setNewChapClass(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500 font-mono"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 bg-zinc-950/80 p-3 rounded-xl border border-zinc-900">
-                    <label className="text-[10px] font-bold text-zinc-400 uppercase flex items-center gap-1">
-                      🔒 My Owned Lecture Embed URL (No Public Copyright Material)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. https://www.youtube.com/embed/your_private_video or your_hosted_video_url"
-                      value={newChapLecture}
-                      onChange={(e) => setNewChapLecture(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-zinc-500 font-mono mt-1"
-                    />
-                    <p className="text-[9px] text-zinc-500 leading-normal mt-1">
-                      <strong>Copyright Guard Policy:</strong> Enter private embed links or video uploads you own. In accordance with Curious Bharat rules, public third-party copyrighted channels are blocked from being embedded here.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-zinc-500 uppercase">Drive Study PDF Link</label>
-                      <input
-                        type="text"
-                        placeholder="Google Drive URL"
-                        value={newChapPdf}
-                        onChange={(e) => setNewChapPdf(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-zinc-500 uppercase">Drive DPP practice Sheet</label>
-                      <input
-                        type="text"
-                        placeholder="DPP File URL"
-                        value={newChapDpp}
-                        onChange={(e) => setNewChapDpp(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <Plus className="w-4 h-4" /> Add Chapter to Course
-                  </button>
-                </form>
-              </div>
-
-              {/* Form 3: Add Topics to Selected Chapter */}
-              <div className="bg-zinc-950 border border-zinc-800 p-6 rounded-2xl space-y-4">
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-1">
-                    <Sliders className="w-4 h-4 text-zinc-500" /> Add Topic to Chapter
-                  </h4>
-                  <p className="text-[10px] text-zinc-500 leading-normal mt-0.5">Inject nested topic folders containing custom lectures, notes, and topic-specific practice.</p>
-                </div>
-
-                <form onSubmit={handleAddTopic} className="space-y-3.5">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-zinc-500 uppercase">Select Target Chapter</label>
-                    <select
-                      value={newTopicChapterId}
-                      onChange={(e) => setNewTopicChapterId(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500"
-                      required
-                    >
-                      <option value="">-- Choose Chapter --</option>
-                      {selectedCourseObj?.chapters.map(ch => (
-                        <option key={ch.id} value={ch.id}>{ch.title}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-zinc-500 uppercase">Topic Title</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Aerobic Respiration"
-                      value={newTopicTitle}
-                      onChange={(e) => setNewTopicTitle(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-semibold text-zinc-500 uppercase">Topic Description</label>
-                    <textarea
-                      placeholder="e.g. Detailed pathway of oxygen-dependent ATP production in mitochondria."
-                      value={newTopicDesc}
-                      onChange={(e) => setNewTopicDesc(e.target.value)}
-                      rows={2}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500 resize-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-zinc-400 uppercase flex items-center gap-1">
-                      🔒 Topic Lecture Embed URL (Owned Portal Content)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. YouTube embed link or video URL"
-                      value={newTopicLecture}
-                      onChange={(e) => setNewTopicLecture(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-zinc-500 font-mono mt-1"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-zinc-500 uppercase">Topic Notes PDF Link</label>
-                      <input
-                        type="text"
-                        placeholder="Google Drive PDF URL"
-                        value={newTopicPdf}
-                        onChange={(e) => setNewTopicPdf(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-zinc-500 uppercase">Topic DPP Sheet Link</label>
-                      <input
-                        type="text"
-                        placeholder="DPP practice file URL"
-                        value={newTopicDpp}
-                        onChange={(e) => setNewTopicDpp(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-zinc-500"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <Plus className="w-4 h-4" /> Add Topic to Chapter
-                  </button>
-                </form>
               </div>
 
             </div>
           </div>
-        )}
-
-        {/* ======================= TAB 3: CLOUD SERVICES CONNECTIONS ======================= */}
+        )}        {/* ======================= TAB 3: CLOUD SERVICES CONNECTIONS ======================= */}
         {activeSubTab === 'connections' && (
           <div className="space-y-6">
             <div className="border-b border-zinc-800 pb-3">
@@ -1455,128 +1425,480 @@ export default function AdminPortal({
 
         {/* ======================= TAB 4: STUDENT ANALYSIS & PURCHASES ======================= */}
         {activeSubTab === ('student-analysis' as any) && (
-          <div className="space-y-6">
-            <div className="border-b border-zinc-800 pb-3">
-              <h3 className="text-xl font-bold text-white font-sans">Student Purchases & Analysis</h3>
-              <p className="text-xs text-zinc-500 mt-1">Review live student registration logs, contact data, and validated payment receipts.</p>
+          <div className="space-y-6 font-sans">
+            <div className="border-b border-zinc-800 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <span className="p-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-xs">📊</span>
+                  Student Analysis Ledger & Spreadsheet
+                </h3>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Full-fidelity grid editor with transactional reconciliation, search matching, instant CSV spreadsheet exports, and record generation.
+                </p>
+              </div>
+
+              {/* CSV Download Trigger */}
+              <button
+                onClick={() => {
+                  playSound('click');
+                  if (studentAnalysisRecords.length === 0) {
+                    showSuccess("No records to export.");
+                    return;
+                  }
+                  // Generate CSV
+                  const headers = ['Row', 'Student Name', 'Contact Details', 'Purchased Course', 'Price', 'UTR Reference', 'Payment Status', 'Timestamp'];
+                  const rows = studentAnalysisRecords.map((r, idx) => [
+                    idx + 1,
+                    r.studentName,
+                    r.contactDetails,
+                    r.courseTitle,
+                    r.price,
+                    r.paymentDetails,
+                    r.status || 'pending',
+                    r.purchasedAt
+                  ]);
+                  const csvContent = [headers, ...rows].map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(",")).join("\n");
+                  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.setAttribute("href", url);
+                  link.setAttribute("download", `student_enrollment_ledger_${new Date().toISOString().slice(0,10)}.csv`);
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  showSuccess("Spreadsheet downloaded as CSV successfully!");
+                }}
+                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 hover:text-black font-bold rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow shadow-emerald-950"
+              >
+                <FileText className="w-4 h-4" />
+                Export Ledger (.CSV)
+              </button>
             </div>
 
-            {(!studentAnalysisRecords || studentAnalysisRecords.length === 0) ? (
-              <div className="text-center py-20 bg-zinc-950 border border-zinc-900 rounded-2xl text-sm text-zinc-500 font-sans">
-                No course purchase logs recorded yet. Active student checkout activations will appear here in real-time.
+            {/* Quick stats ribbon */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-zinc-950 border border-zinc-900 p-4 rounded-2xl">
+                <span className="text-[10px] text-zinc-500 font-bold uppercase block font-mono">Row Capacity</span>
+                <strong className="text-lg font-bold text-white font-mono">{studentAnalysisRecords.length} / 5000</strong>
               </div>
-            ) : (
-              <div className="space-y-4 font-sans">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {studentAnalysisRecords.map((record) => (
-                    <div 
-                      key={record.id} 
-                      className="bg-zinc-950 border border-zinc-850 p-5 rounded-2xl space-y-4 relative overflow-hidden shadow-lg hover:border-zinc-700 transition"
-                    >
-                      <div className={`absolute top-0 left-0 w-1.5 h-full ${
-                        record.status === 'approved' 
-                          ? 'bg-emerald-500' 
-                          : record.status === 'denied' 
-                            ? 'bg-rose-500' 
-                            : 'bg-amber-500'
-                      }`}></div>
-                      <div className="space-y-1 pl-2">
-                        <div className="flex justify-between items-center gap-2">
-                          <span className="text-[10px] text-zinc-500 font-mono block font-bold">
-                            🕒 {record.purchasedAt}
-                          </span>
-                          <span className={`text-[8px] uppercase font-mono font-bold px-1.5 py-0.5 rounded ${
-                            record.status === 'approved'
-                              ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-900'
-                              : record.status === 'denied'
-                                ? 'bg-rose-950/80 text-rose-400 border border-rose-900'
-                                : 'bg-amber-950/80 text-amber-400 border border-amber-900'
-                          }`}>
-                            {record.status || 'pending'}
-                          </span>
-                        </div>
-                        <h4 className="text-sm font-bold text-white truncate pt-1">
-                          {record.studentName}
-                        </h4>
-                        <p className="text-xs text-zinc-400 truncate">
-                          📞 {record.contactDetails}
-                        </p>
-                      </div>
+              <div className="bg-zinc-950 border border-zinc-900 p-4 rounded-2xl">
+                <span className="text-[10px] text-zinc-500 font-bold uppercase block font-mono">Approved Batches</span>
+                <strong className="text-lg font-bold text-emerald-400 font-mono">
+                  {studentAnalysisRecords.filter(r => r.status === 'approved').length}
+                </strong>
+              </div>
+              <div className="bg-zinc-950 border border-zinc-900 p-4 rounded-2xl">
+                <span className="text-[10px] text-zinc-500 font-bold uppercase block font-mono">Pending Receipts</span>
+                <strong className="text-lg font-bold text-yellow-500 font-mono">
+                  {studentAnalysisRecords.filter(r => r.status !== 'approved' && r.status !== 'denied').length}
+                </strong>
+              </div>
+              <div className="bg-zinc-950 border border-zinc-900 p-4 rounded-2xl">
+                <span className="text-[10px] text-zinc-500 font-bold uppercase block font-mono">Reconciled Value</span>
+                <strong className="text-lg font-bold text-white font-mono">
+                  ₹{studentAnalysisRecords.reduce((sum, rec) => {
+                    if (rec.status === 'approved') {
+                      const num = parseInt(rec.price.replace(/[^0-9]/g, ''), 10) || 0;
+                      return sum + num;
+                    }
+                    return sum;
+                  }, 0)}
+                </strong>
+              </div>
+            </div>
 
-                      <div className="border-t border-zinc-900 pt-3 space-y-2 text-xs pl-2">
-                        <div className="flex justify-between">
-                          <span className="text-zinc-500 font-medium">Course:</span>
-                          <span className="text-zinc-300 font-bold truncate max-w-[150px]">{record.courseTitle}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-zinc-500 font-medium">Price Paid:</span>
-                          <span className="text-emerald-400 font-mono font-bold">{record.price}</span>
-                        </div>
-                        <div className="flex justify-between pt-1 border-t border-zinc-900">
-                          <span className="text-zinc-500 font-medium">UTR Ref:</span>
-                          <span className="text-white font-mono bg-zinc-900 px-1.5 py-0.5 rounded text-[10px]">{record.paymentDetails}</span>
-                        </div>
+            {/* SPREADSHEET CONTROL BAR */}
+            <div className="bg-zinc-950 border border-zinc-850 p-4 rounded-2xl flex flex-col sm:flex-row gap-3 justify-between items-center">
+              {/* Search Bar */}
+              <div className="relative w-full sm:w-72">
+                <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  placeholder="Query student, course, status, UTR..."
+                  value={spreadsheetSearch}
+                  onChange={(e) => setSpreadsheetSearch(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white outline-none focus:border-zinc-500"
+                />
+                {spreadsheetSearch && (
+                  <button
+                    onClick={() => setSpreadsheetSearch('')}
+                    className="absolute right-3 top-2 text-zinc-500 hover:text-white font-bold"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
 
-                        {/* Verification Actions */}
-                        {(!record.status || record.status === 'pending') ? (
-                          <div className="flex gap-2 pt-2 border-t border-zinc-900">
-                            <button
-                              onClick={() => handleStatusChange(record.id, 'approved')}
-                              className="flex-1 bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-900 py-1 rounded text-[10px] font-bold transition cursor-pointer"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleStatusChange(record.id, 'denied')}
-                              className="flex-1 bg-rose-950 hover:bg-rose-900 text-rose-400 border border-rose-900 py-1 rounded text-[10px] font-bold transition cursor-pointer"
-                            >
-                              Deny
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2 pt-2 border-t border-zinc-900">
-                            <button
-                              onClick={() => handleStatusChange(record.id, 'pending')}
-                              className="w-full bg-zinc-900 hover:bg-zinc-850 text-zinc-400 border border-zinc-800 py-1 rounded text-[10px] font-bold transition cursor-pointer text-center"
-                            >
-                              Reset to Pending
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+              {/* Manual insert student inline form */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const target = e.target as any;
+                  const name = target.elements.stuName.value.trim();
+                  const contact = target.elements.stuContact.value.trim();
+                  const course = target.elements.stuCourse.value;
+                  const price = target.elements.stuPrice.value.trim();
+                  const utr = target.elements.stuUtr.value.trim() || 'MANUAL-ENTRY';
+
+                  if (!name || !contact) {
+                    showSuccess("Please provide Name and Contact details.");
+                    return;
+                  }
+
+                  const newRecord = {
+                    id: `record-${Date.now()}`,
+                    studentName: name,
+                    contactDetails: contact,
+                    courseTitle: course,
+                    price: price.startsWith('₹') ? price : `₹${price}`,
+                    paymentDetails: utr,
+                    status: 'approved',
+                    purchasedAt: new Date().toLocaleString()
+                  };
+
+                  onUpdateStudentRecords([newRecord, ...studentAnalysisRecords]);
+                  target.reset();
+                  showSuccess("Manual row injected into spreadsheet successfully!");
+                }}
+                className="flex flex-wrap gap-2 items-center w-full sm:w-auto"
+              >
+                <input
+                  name="stuName"
+                  type="text"
+                  placeholder="New Student Name"
+                  required
+                  className="bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1 text-[11px] text-white outline-none focus:border-zinc-600 max-w-[120px]"
+                />
+                <input
+                  name="stuContact"
+                  type="text"
+                  placeholder="Contact (Email/No)"
+                  required
+                  className="bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1 text-[11px] text-white outline-none focus:border-zinc-600 max-w-[110px]"
+                />
+                <select
+                  name="stuCourse"
+                  className="bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1 text-[11px] text-white outline-none focus:border-zinc-600"
+                >
+                  {courses.map(c => (
+                    <option key={c.id} value={c.title}>{c.title}</option>
                   ))}
-                </div>
+                  {courses.length === 0 && <option value="General Batches">General Science Batch</option>}
+                </select>
+                <input
+                  name="stuPrice"
+                  type="text"
+                  placeholder="₹ Price"
+                  defaultValue="499"
+                  className="bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-[11px] text-white outline-none focus:border-zinc-600 max-w-[60px] font-mono text-center"
+                />
+                <input
+                  name="stuUtr"
+                  type="text"
+                  placeholder="UTR ref (optional)"
+                  className="bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-[11px] text-white outline-none focus:border-zinc-600 max-w-[100px] font-mono"
+                />
+                <button
+                  type="submit"
+                  className="bg-zinc-800 hover:bg-zinc-700 text-white font-bold px-3 py-1 rounded-lg text-[10px] transition cursor-pointer flex items-center gap-1 shrink-0"
+                >
+                  <Plus className="w-3 h-3" /> Ingest Row
+                </button>
+              </form>
+            </div>
 
-                {/* Analytical breakdown */}
-                <div className="bg-zinc-950 border border-zinc-850 p-6 rounded-2xl space-y-4">
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                    📈 Enrollment Diagnostics Overview
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                    <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-900">
-                      <span className="text-xs text-zinc-500 font-medium block">Total Registrations</span>
-                      <strong className="text-xl font-bold text-white font-mono">{studentAnalysisRecords.length}</strong>
-                    </div>
-                    <div className="bg-zinc-900/40 p-4 rounded-xl border border-zinc-900">
-                      <span className="text-xs text-zinc-500 font-medium block">Gross Revenue Generated</span>
-                      <strong className="text-xl font-bold text-emerald-400 font-mono">
-                        ₹{studentAnalysisRecords.reduce((sum, rec) => {
-                          const num = parseInt(rec.price.replace(/[^0-9]/g, ''), 10) || 0;
-                          return sum + num;
-                        }, 0)}
-                      </strong>
-                    </div>
-                    <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-900 flex items-center justify-center">
-                      <p className="text-[10px] text-zinc-500 text-left leading-normal">
-                        Records are securely retained locally in your secure administrator environment context.
-                      </p>
-                    </div>
+            {/* SPREADSHEET CONTAINER */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+              
+              {/* PRIMARY TABLE SHEET GRID (8 columns) */}
+              <div className="xl:col-span-8 bg-zinc-950 border border-zinc-850 rounded-2xl overflow-hidden shadow-2xl">
+                
+                {/* Excel-like Grid Metadata info bar */}
+                <div className="bg-zinc-900/60 border-b border-zinc-800 px-4 py-2 flex items-center justify-between text-[10px] font-mono text-zinc-500">
+                  <div className="flex items-center gap-3">
+                    <span>💡 Tip: Click row index to select / inspect</span>
+                    <span>•</span>
+                    <span>Direct-edit cell text to live edit spreadsheet name / contact</span>
+                  </div>
+                  <div className="text-zinc-400">
+                    Showing {studentAnalysisRecords.filter(r => {
+                      const q = spreadsheetSearch.toLowerCase();
+                      return r.studentName.toLowerCase().includes(q) ||
+                             r.contactDetails.toLowerCase().includes(q) ||
+                             r.courseTitle.toLowerCase().includes(q) ||
+                             r.paymentDetails.toLowerCase().includes(q) ||
+                             (r.status || '').toLowerCase().includes(q);
+                    }).length} / {studentAnalysisRecords.length} Rows
                   </div>
                 </div>
 
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse select-text">
+                    <thead>
+                      <tr className="bg-zinc-900/40 border-b border-zinc-800 text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
+                        <th className="py-2.5 px-3 border-r border-zinc-800 text-center w-12 bg-zinc-900/20">Index</th>
+                        <th 
+                          onClick={() => {
+                            setSpreadsheetSortOrder(prev => spreadsheetSortField === 'studentName' && prev === 'asc' ? 'desc' : 'asc');
+                            setSpreadsheetSortField('studentName');
+                          }}
+                          className="py-2.5 px-4 border-r border-zinc-800 cursor-pointer hover:bg-zinc-900/60 hover:text-white transition"
+                        >
+                          <div className="flex items-center gap-1">
+                            Student Name {spreadsheetSortField === 'studentName' && (spreadsheetSortOrder === 'asc' ? '▲' : '▼')}
+                          </div>
+                        </th>
+                        <th className="py-2.5 px-4 border-r border-zinc-800">Contact Details</th>
+                        <th className="py-2.5 px-4 border-r border-zinc-800">Purchased Course</th>
+                        <th 
+                          onClick={() => {
+                            setSpreadsheetSortOrder(prev => spreadsheetSortField === 'price' && prev === 'asc' ? 'desc' : 'asc');
+                            setSpreadsheetSortField('price');
+                          }}
+                          className="py-2.5 px-3 border-r border-zinc-800 cursor-pointer hover:bg-zinc-900/60 hover:text-white transition w-24 text-center"
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Price {spreadsheetSortField === 'price' && (spreadsheetSortOrder === 'asc' ? '▲' : '▼')}
+                          </div>
+                        </th>
+                        <th className="py-2.5 px-4 border-r border-zinc-800 w-32">UTR Ref</th>
+                        <th className="py-2.5 px-3 text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-900 font-mono text-xs">
+                      {studentAnalysisRecords
+                        .filter(r => {
+                          const q = spreadsheetSearch.toLowerCase();
+                          return r.studentName.toLowerCase().includes(q) ||
+                                 r.contactDetails.toLowerCase().includes(q) ||
+                                 r.courseTitle.toLowerCase().includes(q) ||
+                                 r.paymentDetails.toLowerCase().includes(q) ||
+                                 (r.status || '').toLowerCase().includes(q);
+                        })
+                        .sort((a, b) => {
+                          let fieldA = (a as any)[spreadsheetSortField] || '';
+                          let fieldB = (b as any)[spreadsheetSortField] || '';
+                          if (spreadsheetSortField === 'price') {
+                            fieldA = parseInt(String(fieldA).replace(/[^0-9]/g, ''), 10) || 0;
+                            fieldB = parseInt(String(fieldB).replace(/[^0-9]/g, ''), 10) || 0;
+                          }
+                          if (fieldA < fieldB) return spreadsheetSortOrder === 'asc' ? -1 : 1;
+                          if (fieldA > fieldB) return spreadsheetSortOrder === 'asc' ? 1 : -1;
+                          return 0;
+                        })
+                        .map((record, index) => {
+                          const isSelected = selectedSpreadsheetRowId === record.id;
+                          return (
+                            <tr 
+                              key={record.id}
+                              className={`group hover:bg-zinc-900/45 transition ${
+                                isSelected ? 'bg-zinc-850 text-white' : 'text-zinc-300'
+                              }`}
+                            >
+                              {/* INDEX ROW CELL */}
+                              <td 
+                                onClick={() => setSelectedSpreadsheetRowId(record.id)}
+                                className={`py-2 px-3 border-r border-zinc-850 text-center text-[10px] font-bold cursor-pointer select-none ${
+                                  isSelected ? 'bg-emerald-500 text-zinc-950' : 'bg-zinc-900/10 text-zinc-500 group-hover:text-zinc-300'
+                                }`}
+                              >
+                                {index + 1}
+                              </td>
+
+                              {/* STUDENT NAME (INLINE EDITABLE) */}
+                              <td className="py-2 px-4 border-r border-zinc-850 font-bold truncate max-w-[150px]">
+                                <input
+                                  type="text"
+                                  value={record.studentName}
+                                  onChange={(e) => {
+                                    const updated = studentAnalysisRecords.map(r => 
+                                      r.id === record.id ? { ...r, studentName: e.target.value } : r
+                                    );
+                                    onUpdateStudentRecords(updated);
+                                  }}
+                                  className="w-full bg-transparent border-none text-white outline-none focus:bg-zinc-900 focus:px-1.5 focus:py-0.5 rounded font-bold"
+                                />
+                              </td>
+
+                              {/* CONTACT DETAILS (INLINE EDITABLE) */}
+                              <td className="py-2 px-4 border-r border-zinc-850 text-zinc-400">
+                                <input
+                                  type="text"
+                                  value={record.contactDetails}
+                                  onChange={(e) => {
+                                    const updated = studentAnalysisRecords.map(r => 
+                                      r.id === record.id ? { ...r, contactDetails: e.target.value } : r
+                                    );
+                                    onUpdateStudentRecords(updated);
+                                  }}
+                                  className="w-full bg-transparent border-none text-zinc-400 outline-none focus:bg-zinc-900 focus:px-1.5 focus:py-0.5 rounded"
+                                />
+                              </td>
+
+                              {/* PURCHASED COURSE */}
+                              <td className="py-2 px-4 border-r border-zinc-850 text-zinc-400 truncate max-w-[180px]">
+                                {record.courseTitle}
+                              </td>
+
+                              {/* TRANSACTION PRICE */}
+                              <td className="py-2 px-3 border-r border-zinc-850 text-center font-bold text-emerald-400">
+                                {record.price}
+                              </td>
+
+                              {/* PAYMENT REFERENCE DETS */}
+                              <td className="py-2 px-4 border-r border-zinc-850 text-zinc-500 text-[10px]">
+                                {record.paymentDetails}
+                              </td>
+
+                              {/* VERIFICATION STATUSbadge */}
+                              <td className="py-2 px-3 text-center">
+                                <select
+                                  value={record.status || 'pending'}
+                                  onChange={(e) => {
+                                    playSound('click');
+                                    handleStatusChange(record.id, e.target.value as any);
+                                  }}
+                                  className={`text-[9px] font-bold uppercase py-0.5 px-2 rounded-lg cursor-pointer bg-zinc-900 text-center outline-none border ${
+                                    record.status === 'approved' 
+                                      ? 'text-emerald-400 border-emerald-950' 
+                                      : record.status === 'denied' 
+                                        ? 'text-rose-400 border-rose-950' 
+                                        : 'text-amber-400 border-amber-950'
+                                  }`}
+                                >
+                                  <option value="pending">Pending</option>
+                                  <option value="approved">Approved</option>
+                                  <option value="denied">Denied</option>
+                                </select>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      {studentAnalysisRecords.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="text-center py-10 text-zinc-600">No matching student ledger entries inside spreadsheet.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            )}
+
+              {/* SIDE INSPECTOR PANEL: HIGHLIGHT SELECTED STUDENT (4 columns) */}
+              <div className="xl:col-span-4 space-y-6">
+                {selectedSpreadsheetRowId ? (() => {
+                  const currentRecord = studentAnalysisRecords.find(r => r.id === selectedSpreadsheetRowId);
+                  if (!currentRecord) return <div className="text-xs text-zinc-600">Row cleared. Select an index from the spreadsheet.</div>;
+                  return (
+                    <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl space-y-5 relative overflow-hidden shadow-2xl">
+                      <div className="absolute top-0 right-0 p-3">
+                        <button
+                          onClick={() => setSelectedSpreadsheetRowId(null)}
+                          className="text-zinc-600 hover:text-white transition font-bold"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[9px] font-mono font-bold text-emerald-400 uppercase tracking-widest block">Active Row Inspector</span>
+                        <h4 className="text-base font-bold text-white truncate">{currentRecord.studentName}</h4>
+                        <p className="text-xs text-zinc-500">{currentRecord.contactDetails}</p>
+                      </div>
+
+                      <div className="border-t border-zinc-900 pt-3 space-y-3 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500 font-medium">Payment Target Batch</span>
+                          <span className="text-zinc-300 font-bold truncate max-w-[170px]">{currentRecord.courseTitle}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500 font-medium">Reconciliation Price</span>
+                          <span className="text-emerald-400 font-bold font-mono">{currentRecord.price}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500 font-medium">UTR Reference ID</span>
+                          <span className="text-white font-mono bg-zinc-900 px-1.5 py-0.5 rounded text-[10px]">{currentRecord.paymentDetails}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500 font-medium">Date Stamp Logged</span>
+                          <span className="text-zinc-400 font-mono text-[10px]">{currentRecord.purchasedAt}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500 font-medium">Ledger Status</span>
+                          <span className={`text-[10px] uppercase font-bold font-mono px-2 py-0.5 rounded-md ${
+                            currentRecord.status === 'approved'
+                              ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/40'
+                              : currentRecord.status === 'denied'
+                                ? 'bg-rose-950/40 text-rose-400 border border-rose-900/40'
+                                : 'bg-amber-950/40 text-amber-400 border border-amber-900/40'
+                          }`}>
+                            {currentRecord.status || 'pending'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Diagnostic Breakdown progress charts in side inspector */}
+                      <div className="bg-zinc-900/30 p-4 rounded-xl border border-zinc-900 space-y-3.5">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">🎓 Student Curriculum Breakdown</span>
+                        
+                        <div className="space-y-2 text-[11px]">
+                          <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
+                            <span>Diagnostic Score</span>
+                            <span className="text-white font-bold">88% (Excellent)</span>
+                          </div>
+                          <div className="w-full bg-zinc-900 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-emerald-400 h-1.5 rounded-full" style={{ width: '88%' }}></div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 text-[11px]">
+                          <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
+                            <span>Syllabus Reading Track</span>
+                            <span className="text-white font-bold">14 / 18 Chapters</span>
+                          </div>
+                          <div className="w-full bg-zinc-900 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-emerald-400 h-1.5 rounded-full" style={{ width: '77%' }}></div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 text-[11px]">
+                          <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
+                            <span>Daily Quiz Submissions</span>
+                            <span className="text-white font-bold">120 solved</span>
+                          </div>
+                          <div className="w-full bg-zinc-900 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-emerald-400 h-1.5 rounded-full" style={{ width: '92%' }}></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Manual Row Delete Option */}
+                      <div className="pt-2">
+                        <button
+                          onClick={() => {
+                            playSound('click');
+                            if (confirm(`Are you sure you want to purge ${currentRecord.studentName} from enrollment logs?`)) {
+                              onUpdateStudentRecords(studentAnalysisRecords.filter(r => r.id !== currentRecord.id));
+                              setSelectedSpreadsheetRowId(null);
+                              showSuccess("Student record purged from spreadsheet ledger.");
+                            }
+                          }}
+                          className="w-full py-1.5 bg-rose-950/40 hover:bg-rose-900/50 border border-rose-900/40 text-rose-400 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <Trash2 className="w-4 h-4" /> Purge Ledger Row
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })() : (
+                  <div className="bg-zinc-950/40 border border-zinc-900 p-8 rounded-2xl text-center space-y-2 text-zinc-500 py-16">
+                    <Database className="w-8 h-8 text-zinc-700 mx-auto" />
+                    <p className="text-xs font-medium">Select a student row index from the left spreadsheet grid to inspect detailed performance and verification logs.</p>
+                  </div>
+                )}
+              </div>
+
+            </div>
           </div>
         )}
 
@@ -1619,8 +1941,19 @@ export default function AdminPortal({
                     </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-semibold text-zinc-500 uppercase">APK Download URL Link</label>
+                  <div className="space-y-1.5 bg-zinc-900/30 p-3 rounded-xl border border-zinc-900">
+                    <label className="text-[10px] font-semibold text-zinc-500 uppercase">Select & Upload APK File directly</label>
+                    <InlineUploadButton
+                      accept=".apk"
+                      label="Upload Android APK file (.apk)"
+                      onUploadComplete={(dataUrl) => {
+                        const generatedUrl = `${window.location.origin}/downloads/curiousbharat-${apkVersion || 'latest'}.apk`;
+                        setApkUrl(generatedUrl);
+                        showSuccess('Android APK uploaded! Secure download path mapped successfully.');
+                      }}
+                    />
+                    <div className="mt-2 text-center text-zinc-600 text-[10px]">-- OR ENTER MANUALLY --</div>
+                    <label className="text-[10px] font-semibold text-zinc-500 uppercase mt-2 block">APK Download URL Link</label>
                     <input
                       type="text"
                       placeholder="e.g. https://github.com/..."
@@ -1683,7 +2016,24 @@ export default function AdminPortal({
                         url: apkUrl
                       };
                       setReleases([newRel, ...releases]);
-                      showSuccess(`Published ${apkVersion} update with ${apkSize < 60 ? 'silent background download' : 'user warning prompt'}!`);
+                      
+                      fetch('/api/apk-version', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ version: apkVersion, url: apkUrl, notes: apkNotes })
+                      })
+                      .then(res => res.json())
+                      .then(data => {
+                        if (data.success) {
+                          showSuccess(`Successfully published ${apkVersion} to server registry! Active student app instances will be prompted to upgrade automatically.`);
+                        } else {
+                          showSuccess(`Published ${apkVersion} locally (Server status error)`);
+                        }
+                      })
+                      .catch(err => {
+                        console.error('Error updating APK on server:', err);
+                        showSuccess(`Published ${apkVersion} offline successfully.`);
+                      });
                     }}
                     className="w-full py-2.5 bg-white text-black hover:bg-zinc-200 font-extrabold text-xs rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
                   >

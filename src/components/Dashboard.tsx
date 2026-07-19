@@ -716,10 +716,10 @@ export default function Dashboard({
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="relative overflow-hidden rounded-3xl bg-zinc-950 border border-zinc-800 p-8 sm:p-10 shadow-2xl bg-gradient-to-br from-[#4F9DFF]/5 via-zinc-950 to-[#14b8a6]/5"
+            className="relative overflow-hidden rounded-3xl bg-black border border-zinc-800 p-8 sm:p-10 shadow-2xl"
           >
             {/* Premium background accents */}
-            <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-[#4F9DFF] to-[#14b8a6] z-20"></div>
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-[#fcfcfc] z-20"></div>
             <div className="absolute top-4 right-4 w-40 h-40 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-4 left-4 w-40 h-40 bg-teal-500/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -752,10 +752,10 @@ export default function Dashboard({
                 </div>
               </div>
 
-              {/* Magnificent 3D Tree/Gurukul Element */}
+              {/* Magnificent Study Boy 3D Element */}
               <div className="md:col-span-4 h-44 sm:h-52 relative flex items-center justify-center">
-                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-indigo-500/10 rounded-full blur-2xl animate-pulse" />
-                <ThreeDElement type="tree" className="w-44 h-44 sm:w-48 sm:h-48 relative z-10" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#4F9DFF]/10 to-[#14b8a6]/10 rounded-full blur-2xl animate-pulse" />
+                <ThreeDElement type="boy" className="w-44 h-44 sm:w-48 sm:h-48 relative z-10" />
               </div>
             </div>
           </motion.div>

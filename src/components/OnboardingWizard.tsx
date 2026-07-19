@@ -47,8 +47,8 @@ export default function OnboardingWizard({ onComplete, isDarkMode = true }: Onbo
     setIsOptimizing(true);
     
     const messages = [
-      "Kalu is scanning the national CBSE curriculum... 🔍",
-      "Buddhu is sketching daily science analogies... 🎨",
+      "AI is scanning the national CBSE curriculum... 🔍",
+      "Drafting daily intuitive science analogies... 🎨",
       "Drafting specialized MCQ & Mindmap test banks... 📝",
       "Personalized Gurukul profile built successfully! ✨"
     ];

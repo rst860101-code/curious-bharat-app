@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
+import fs from 'fs';
 import { GoogleGenAI } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 
@@ -9,6 +10,32 @@ dotenv.config();
 
 const app = express();
 const PORT = 3000;
+
+const APK_FILE_PATH = path.join(process.cwd(), 'apk-config.json');
+
+function getLatestApk() {
+  try {
+    if (fs.existsSync(APK_FILE_PATH)) {
+      return JSON.parse(fs.readFileSync(APK_FILE_PATH, 'utf-8'));
+    }
+  } catch (err) {
+    console.error('Error reading APK file:', err);
+  }
+  return {
+    version: "1.0.0",
+    url: "",
+    notes: "Initial release. Safe to install.",
+    releaseDate: new Date().toISOString()
+  };
+}
+
+function saveLatestApk(apk: any) {
+  try {
+    fs.writeFileSync(APK_FILE_PATH, JSON.stringify(apk, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Error writing APK file:', err);
+  }
+}
 
 app.use(express.json());
 
@@ -40,6 +67,27 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+// APK Version Endpoints
+app.get('/api/apk-version', (req, res) => {
+  res.json(getLatestApk());
+});
+
+app.post('/api/apk-version', (req, res) => {
+  const { version, url, notes } = req.body;
+  if (!version) {
+    res.status(400).json({ error: 'Version is required' });
+    return;
+  }
+  const apk = {
+    version,
+    url: url || '',
+    notes: notes || 'Minor updates and stability fixes.',
+    releaseDate: new Date().toISOString()
+  };
+  saveLatestApk(apk);
+  res.json({ success: true, apk });
+});
+
 // Chat endpoint with Gemini AI
 app.post('/api/chat', async (req, res) => {
   try {
@@ -52,13 +100,13 @@ app.post('/api/chat', async (req, res) => {
 
     const ai = getGeminiClient();
 
-    // Define premium educational instructions with Kalu & Buddhu personas
-    const systemInstruction = `You are "Kalu" & "Buddhu", the dynamic, world-class Science Tutor duo under Bharat AI for CBSE/State Board Class 9 to Class 12 students in India.
+    // Define premium educational instructions with standard professional AI personas
+    const systemInstruction = `You are "Bharat AI Mentor", the dynamic, world-class Science Tutor under Bharat AI for CBSE/State Board Class 9 to Class 12 students in India.
 Your mission is to make learning Science (Physics, Chemistry, Biology) incredibly fun, active, and accessible.
 
-You have two distinct, lovable personalities who debate and team up to explain concepts:
-1. **Kalu Sir (The Clever Speed-runner)**: ⚡ Cheeky, mischievous, and highly witty. He loves rapid-fire exam hacks, smart scientific shortcuts, and speed formulas.
-2. **Buddhu Sir (The Curious Explorer)**: 😇 Innocent, slow-learning, and deeply visual. He loves asking cute questions and explaining abstract concepts using everyday Indian analogies.
+You explain concepts in two clear styles:
+1. **Exam Speed-Hack (The Analytical Formula Shortcut)**: ⚡ Focuses on rapid-fire exam hacks, smart scientific shortcuts, and speed formulas.
+2. **Conceptual Analogy (The Everyday Explorer)**: 😇 Focuses on visual, easy-to-understand explanations of abstract concepts using everyday Indian analogies.
 
 Pedagogical and formatting rules:
 1. CRISP, CONCISE & WHAT ASKED: Directly answer exactly what is asked. Avoid unnecessary introductory text, fluff, or extensive greetings. Keep it straight to the point and extremely crisp (100-150 words max).
@@ -69,8 +117,8 @@ Pedagogical and formatting rules:
    [Given] I = 2 A, R = 5 Ohm
    [Calculation] V = 2 * 5 = 10 Volts
    \`\`\`
-3. Use **Kalu Sir's Clever Hack ⚡** for exam cheat-codes.
-4. Use **Buddhu Sir's Analogy 🎈** for short everyday Indian analogies.
+3. Use **Exam Speed-Hack ⚡** for exam cheat-codes.
+4. Use **Conceptual Analogy 🎈** for short everyday Indian analogies.
 
 Current Study Chapter Context: ${chapterContext || 'General Science'}.`;
 
@@ -283,7 +331,7 @@ app.post('/api/generate-batch-features', async (req, res) => {
     const ai = getGeminiClient();
 
     const systemInstruction = `You are "Bharat AI Batch Designer". Your job is to generate a highly catchy, premium, and motivating special features list (2-3 bullet points max) for a new study batch/course.
-The features should feel deeply Indian, engaging, and high-tech (incorporating NCERT prep, game boards, daily battle practice, flashcard streaks, or Kalu-Buddhu shortcut notes).
+The features should feel deeply Indian, engaging, and high-tech (incorporating NCERT prep, game boards, daily battle practice, flashcard streaks, or speed formula cheat notes).
 Respond with a simple, clean, unformatted text string of 2-3 points separated by newline. Keep each point under 12 words. Do not use Markdown styling other than standard bullet points (e.g. "• Feature 1\n• Feature 2").`;
 
     const prompt = `Batch Title: "${title || 'Class 10 Board Accelerator'}"
@@ -299,7 +347,7 @@ Custom Batch Goal/Desired Focus: "${promptGoal || 'Add active game challenges an
       }
     });
 
-    res.json({ text: response.text?.trim() || "• Real-time mock exam contests\n• Personal chat access with Kalu Sir" });
+    res.json({ text: response.text?.trim() || "• Real-time mock exam contests\n• Personal chat access with expert AI Mentors" });
   } catch (error: any) {
     console.warn('Batch AI feature generation fallback triggered:', error);
     // Dynamic customized Indian batch features fallback generator based on the input subject/goal
@@ -308,7 +356,7 @@ Custom Batch Goal/Desired Focus: "${promptGoal || 'Add active game challenges an
     
     let offlineFeatures = "";
     if (subject.toLowerCase().includes('science') || subject.toLowerCase().includes('physics') || subject.toLowerCase().includes('chemistry')) {
-      offlineFeatures = "• ⚡ Kalu Sir's 10-Second Numerical Formula Shortcuts\n• 🎈 Interactive NCERT Virtual Labs with Buddhu Sir\n• 🏆 Weekly Tricolor Board Challenger Leaderboard";
+      offlineFeatures = "• ⚡ 10-Second Numerical Formula Shortcuts\n• 🎈 Interactive NCERT Virtual Labs & Analogies\n• 🏆 Weekly Tricolor Board Challenger Leaderboard";
     } else if (subject.toLowerCase().includes('math')) {
       offlineFeatures = "• 🔢 Formula Hackathons & Speed-Math Contests\n• 🎮 Gamified Class 10 Geometry Quest Boards\n• 📋 15 Years Verified board exam PYQ solvers";
     } else {

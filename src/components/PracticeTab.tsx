@@ -399,10 +399,10 @@ export default function PracticeTab({ progress, onUpdateProgress, studentName, a
                 <span className="text-[10px] font-mono tracking-widest uppercase font-black text-blue-400 bg-blue-950/65 border border-blue-900/50 px-2.5 py-1 rounded-full">
                   {appLanguage === 'hi' ? 'परम मूल्यांकन प्रयोगशाला' : 'ULTIMATE ASSESSMENT LAB'}
                 </span>
-                <h2 className="text-2xl font-black text-white tracking-tight">
+                <h2 className="text-2xl font-black text-white tracking-tight text-white-force">
                   {appLanguage === 'hi' ? 'एआई कस्टमाइज्ड परीक्षा हब' : 'AI Custom Exam Hub'}
                 </h2>
-                <p className="text-xs text-zinc-400 max-w-xl leading-relaxed">
+                <p className="text-xs text-white max-w-xl leading-relaxed text-white-force">
                   {appLanguage === 'hi' 
                     ? 'अपनी इच्छानुसार बोलकर या टाइप करके अपना स्वयं का पेपर डिज़ाइन करें, या सीबीएसई ब्लू प्रिंट के अनुसार मानक मापदंडों का चयन करें।'
                     : 'Design your own practice sets simply by speaking or typing your demands, or select standard CBSE blueprint parameters.'}
@@ -517,38 +517,6 @@ export default function PracticeTab({ progress, onUpdateProgress, studentName, a
                     >
                       <Mic className="w-4 h-4" />
                     </button>
-                  </div>
-
-                  {/* Sample suggestions pills */}
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] text-zinc-500 uppercase font-mono font-bold tracking-wider">Or Select Quick Suggestions:</span>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        appLanguage === 'hi' 
-                          ? 'इलेक्ट्रिसिटी पर ४ कठिन न्यूमेरिकल' 
-                          : '4 tough numericals on Electricity',
-                        appLanguage === 'hi'
-                          ? 'सेल ओर्गेनेल्स पर सीबीएसई बोर्ड पेपर २०१९'
-                          : 'CBSE 2019 Board Cell Organelles',
-                        appLanguage === 'hi'
-                          ? 'लाइट रिफ्लेक्शन पर ५ ट्रिकी एमसीक्यू'
-                          : '5 tricky MCQs on Light reflection',
-                        appLanguage === 'hi'
-                          ? 'केमिकल बांड्स पर लघु उत्तरीय प्रश्न'
-                          : 'Short-answers on Chemical bonds'
-                      ].map((item, index) => (
-                        <button
-                          key={index}
-                          onClick={() => {
-                            playSound('click');
-                            setCustomPrompt(item);
-                          }}
-                          className="px-3 py-1.5 bg-zinc-900/80 hover:bg-zinc-900 hover:text-white border border-zinc-850 hover:border-zinc-750 text-zinc-400 text-[11px] rounded-xl cursor-pointer transition text-left"
-                        >
-                          ✨ {item}
-                        </button>
-                      ))}
-                    </div>
                   </div>
                 </div>
 
@@ -871,7 +839,7 @@ export default function PracticeTab({ progress, onUpdateProgress, studentName, a
                 </div>
               )}
 
-              {/* Kalu & Buddhu real-time hint widget */}
+              {/* AI Real-Time Hint Widget */}
               <div className="pt-2">
                 <button
                   type="button"
@@ -885,7 +853,7 @@ export default function PracticeTab({ progress, onUpdateProgress, studentName, a
                   <span>
                     {showDuoHint 
                       ? (appLanguage === 'hi' ? 'संकेत छिपाएं' : 'Hide Mentor Advice') 
-                      : (appLanguage === 'hi' ? '💡 कालू और बुद्धू से संकेत मांगें!' : '💡 Ask Kalu & Buddhu for Hints!')}
+                      : (appLanguage === 'hi' ? '💡 एआई गुरु से संकेत मांगें!' : '💡 Ask AI Mentor for Hints!')}
                   </span>
                 </button>
 
@@ -899,11 +867,11 @@ export default function PracticeTab({ progress, onUpdateProgress, studentName, a
                     >
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 bg-zinc-900/60 border border-zinc-900 rounded-2xl">
                         
-                        {/* Kalu's Advice */}
+                        {/* Speed Hack */}
                         <div className="space-y-2 border-b sm:border-b-0 sm:border-r border-zinc-900 pb-3 sm:pb-0 sm:pr-4">
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-black text-white flex items-center gap-1">
-                              😈 {appLanguage === 'hi' ? 'कालू की चालाकी' : "Kalu Sir's Clever Hack"} ⚡
+                              ⚡ {appLanguage === 'hi' ? 'स्मार्ट स्पीड हैक' : "Exam Speed-Hack"} ⚡
                             </span>
                           </div>
                           <p className="text-[11px] leading-relaxed text-zinc-400">
@@ -913,11 +881,11 @@ export default function PracticeTab({ progress, onUpdateProgress, studentName, a
                           </p>
                         </div>
 
-                        {/* Buddhu's Advice */}
+                        {/* Conceptual Analogy */}
                         <div className="space-y-2 sm:pl-1">
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-black text-white flex items-center gap-1">
-                              😇 {appLanguage === 'hi' ? 'बुद्धू की सादृश्यता' : "Buddhu Sir's Analogy"} 🎈
+                              🎈 {appLanguage === 'hi' ? 'अवधारणा सादृश्य' : "Conceptual Analogy"} 🎈
                             </span>
                           </div>
                           <p className="text-[11px] leading-relaxed text-zinc-400">

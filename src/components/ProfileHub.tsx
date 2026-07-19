@@ -303,17 +303,33 @@ export default function ProfileHub({
           </div>
           <button 
             onClick={() => {
-              const url = prompt("Enter a direct profile image URL:", "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80");
-              if (url) {
-                setProfilePic(url);
-                localStorage.setItem('student_pic', url);
-                onUpdateProgress({ ...progress, profilePic: url });
-              }
+              playSound('click');
+              const fileInput = document.createElement('input');
+              fileInput.type = 'file';
+              fileInput.accept = 'image/*';
+              fileInput.onchange = (e: any) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    if (typeof reader.result === 'string') {
+                      setProfilePic(reader.result);
+                      localStorage.setItem('student_pic', reader.result);
+                      onUpdateProgress({ ...progress, profilePic: reader.result });
+                      try {
+                        playSound('victory');
+                      } catch (err) {}
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                }
+              };
+              fileInput.click();
             }}
-            className="absolute bottom-0 right-0 p-1.5 bg-white text-black rounded-full shadow-lg border hover:scale-105 transition"
+            className="absolute bottom-0 right-0 p-1.5 bg-white text-black rounded-full shadow-lg border hover:scale-105 transition cursor-pointer"
             title="Upload photo"
           >
-            <Camera className="w-3 h-3" />
+            <Camera className="w-3 h-3 text-black" />
           </button>
         </div>
 
@@ -538,7 +554,7 @@ export default function ProfileHub({
           ======================================================= */}
       <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 space-y-6">
         <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
-          <h4 className="text-xs font-extrabold uppercase tracking-widest text-zinc-400 font-mono flex items-center gap-1.5">
+          <h4 className="text-xs font-extrabold uppercase tracking-widest text-zinc-400 font-mono flex items-center gap-1.5 profile-label-custom">
             <BarChart className="w-4 h-4 text-zinc-100" />
             Detailed Performance Diagnostics
           </h4>
@@ -692,10 +708,10 @@ export default function ProfileHub({
 
         {/* Detailed Subject Performance Table (Bar Table style) */}
         <div className="space-y-2.5 pt-2">
-          <h5 className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 font-mono">Curriculum Breakdown Table</h5>
+          <h5 className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 font-mono profile-label-custom">Curriculum Breakdown Table</h5>
           
           <div className="border border-zinc-900 rounded-2xl overflow-hidden bg-zinc-900/10">
-            <div className="grid grid-cols-4 bg-zinc-950 p-3 border-b border-zinc-900 text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider text-center">
+            <div className="grid grid-cols-4 bg-zinc-950 p-3 border-b border-zinc-900 text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider text-center profile-label-custom">
               <div className="text-left pl-1">Subject Stream</div>
               <div>Mastery Base</div>
               <div>Quiz Score</div>

@@ -359,11 +359,11 @@ export default function FlashcardsView({
               <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed font-sans">{selectedNode.back}</p>
             </div>
 
-            {/* Kalu & Buddhu Memory Advice specifically on this mind map node */}
+            {/* AI Memory Advice specifically on this mind map node */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1.5">
               <div className="bg-zinc-900/40 border border-zinc-900 rounded-2xl p-4 space-y-1">
                 <div className="flex items-center gap-1 text-xs font-bold text-white">
-                  <span>😈 Kalu Sir's Cheat-Code</span>
+                  <span>⚡ Exam Speed-Hack</span>
                 </div>
                 <p className="text-[11px] text-zinc-400 leading-relaxed">
                   "Underline keywords here like '{selectedNode.front.toLowerCase().includes('lysosome') ? 'suicide enzymes' : 'ATP generation'}'. Don't write bulky textbooks, just list bullet equations!"
@@ -372,7 +372,7 @@ export default function FlashcardsView({
 
               <div className="bg-zinc-900/40 border border-zinc-900 rounded-2xl p-4 space-y-1">
                 <div className="flex items-center gap-1 text-xs font-bold text-white">
-                  <span>😇 Buddhu Sir's Analogy</span>
+                  <span>🎈 Conceptual Analogy</span>
                 </div>
                 <p className="text-[11px] text-zinc-400 leading-relaxed">
                   "Think of this concept like a standard household battery storing chemical charge, or a vacuum cleaner cleaning up debris inside a bedroom! Super easy! 😇"

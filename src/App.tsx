@@ -306,6 +306,60 @@ export default function App() {
     localStorage.setItem('pref_app_language', lang);
   };
 
+  // APK Version Update Popup States
+  const [apkUpdateInfo, setApkUpdateInfo] = useState<{version: string, url: string, notes: string} | null>(null);
+  const [showApkUpdateModal, setShowApkUpdateModal] = useState<boolean>(false);
+  const [currentClientApkVersion, setCurrentClientApkVersion] = useState<string>(() => {
+    return localStorage.getItem('curious_client_apk_version') || '1.0.0';
+  });
+  const [isDownloadingApk, setIsDownloadingApk] = useState<boolean>(false);
+  const [apkDownloadPercent, setApkDownloadPercent] = useState<number>(0);
+
+  useEffect(() => {
+    const checkApkVersion = () => {
+      fetch('/api/apk-version')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.version) {
+            if (data.version !== currentClientApkVersion) {
+              setApkUpdateInfo(data);
+              setShowApkUpdateModal(true);
+            }
+          }
+        })
+        .catch(err => console.error('Error checking APK version:', err));
+    };
+
+    checkApkVersion();
+    const interval = setInterval(checkApkVersion, 10000);
+    return () => clearInterval(interval);
+  }, [currentClientApkVersion]);
+
+  const handleUpdateApk = () => {
+    if (!apkUpdateInfo) return;
+    setIsDownloadingApk(true);
+    setApkDownloadPercent(0);
+    
+    const interval = setInterval(() => {
+      setApkDownloadPercent(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            localStorage.setItem('curious_client_apk_version', apkUpdateInfo.version);
+            setCurrentClientApkVersion(apkUpdateInfo.version);
+            setIsDownloadingApk(false);
+            setShowApkUpdateModal(false);
+            if (apkUpdateInfo.url) {
+              window.location.href = apkUpdateInfo.url;
+            }
+          }, 600);
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 200);
+  };
+
   // Student Analysis Records
   const [studentAnalysisRecords, setStudentAnalysisRecords] = useState<StudentAnalysisRecord[]>([]);
 
@@ -1266,6 +1320,90 @@ export default function App() {
                     </>
                   )}
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {showApkUpdateModal && apkUpdateInfo && (
+          <div key="apk-update-modal" className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              className="bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden max-w-md w-full shadow-2xl relative"
+            >
+              <div className="bg-gradient-to-br from-emerald-600/20 via-zinc-950 to-zinc-950 p-6 border-b border-zinc-900 text-center relative overflow-hidden">
+                <div className="absolute -top-10 -left-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl"></div>
+                <div className="mx-auto w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl flex items-center justify-center mb-4 shadow-lg animate-bounce">
+                  <Atom className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-extrabold text-white">New Learning Version Available!</h3>
+                <p className="text-xs text-zinc-400 mt-1">Upgrade Curious Bharat App to access the latest features</p>
+                
+                <button 
+                  onClick={() => setShowApkUpdateModal(false)}
+                  className="absolute top-4 right-4 text-zinc-500 hover:text-white transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="flex justify-between items-center bg-zinc-900/60 border border-zinc-850 p-3.5 rounded-2xl">
+                  <div>
+                    <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider block">Your App Version</span>
+                    <strong className="text-sm font-mono text-zinc-400">{currentClientApkVersion}</strong>
+                  </div>
+                  <div className="text-zinc-700 font-bold">➔</div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-emerald-500 font-extrabold uppercase tracking-wider block">New Version</span>
+                    <strong className="text-sm font-mono text-emerald-400">{apkUpdateInfo.version}</strong>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider block">What's New in this Build:</span>
+                  <div className="bg-zinc-900/40 p-4 rounded-2xl border border-zinc-900/80 max-h-32 overflow-y-auto">
+                    <p className="text-xs text-zinc-300 leading-relaxed font-sans">{apkUpdateInfo.notes || 'Performance enhancements and optimized course video streaming pipelines.'}</p>
+                  </div>
+                </div>
+
+                {isDownloadingApk ? (
+                  <div className="space-y-3 bg-zinc-900/30 p-4 rounded-2xl border border-zinc-900">
+                    <div className="flex justify-between items-center text-xs font-mono">
+                      <span className="text-emerald-400 animate-pulse flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        Downloading package...
+                      </span>
+                      <span className="text-zinc-400 font-bold">{apkDownloadPercent}%</span>
+                    </div>
+                    <div className="w-full bg-zinc-950 h-2.5 rounded-full overflow-hidden border border-zinc-850">
+                      <div 
+                        className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-200" 
+                        style={{ width: `${apkDownloadPercent}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 text-center">Please do not close the app. Installation will start automatically.</p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleUpdateApk}
+                    className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-extrabold text-xs rounded-2xl transition shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>Update & Install Automatically</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
+
+                <div className="text-center">
+                  <button 
+                    onClick={() => setShowApkUpdateModal(false)}
+                    className="text-[10px] text-zinc-500 hover:text-zinc-300 font-bold transition uppercase tracking-widest cursor-pointer"
+                  >
+                    Continue using old version
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
