@@ -404,13 +404,16 @@ export default function ProfileHub({
 
         {/* Total stats counters */}
         <div className="flex items-center gap-6 border-t border-zinc-900 md:border-t-0 pt-4 md:pt-0">
-          {/* Interactive 3D Graduation Cap and Gold Trophy elements */}
-          <div className="flex gap-4 items-center">
-            <div className="w-20 h-20 relative hidden sm:block" title="Interactive 3D Graduation Cap">
-              <ThreeDElement type="cap" className="w-full h-full" autoRotate={true} interactive={true} />
+          {/* Interactive Graduation Cap, Gold Trophy and Gold Medal elements */}
+          <div className="flex gap-2 items-center">
+            <div className="w-16 h-16 relative hidden sm:block" title="Graduation Cap">
+              <ThreeDElement type="cap" className="w-full h-full" autoRotate={false} interactive={false} />
             </div>
-            <div className="w-20 h-20 relative hidden sm:block" title="Interactive 3D Gold Trophy">
-              <ThreeDElement type="trophy" className="w-full h-full" autoRotate={true} interactive={true} />
+            <div className="w-16 h-16 relative hidden sm:block" title="Gold Trophy">
+              <ThreeDElement type="trophy" className="w-full h-full" autoRotate={false} interactive={false} />
+            </div>
+            <div className="w-16 h-16 relative hidden sm:block" title="Gold Medal">
+              <ThreeDElement type="medal" className="w-full h-full" autoRotate={false} interactive={false} />
             </div>
           </div>
 

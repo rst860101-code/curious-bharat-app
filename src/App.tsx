@@ -74,17 +74,67 @@ const INITIAL_OWNER_PROFILE: OwnerProfile = {
   avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
 };
 
+// Apply theme immediately on initial execution to prevent light-theme flash
+if (typeof window !== 'undefined') {
+  const savedTheme = localStorage.getItem('pref_theme') || 'dark';
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark');
+    document.body.classList.remove('light');
+  } else {
+    document.body.classList.add('light');
+    document.body.classList.remove('dark');
+  }
+}
+
 export default function App() {
   const [currentView, setCurrentView] = useState<'dashboard' | 'chapter-study' | 'chapter-quiz' | 'chapter-flashcards' | 'admin'>('dashboard');
   const [activeTab, setActiveTab] = useState<'home' | 'batches' | 'practice' | 'ai' | 'profile'>('home');
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
-  const [progress, setProgress] = useState<UserProgress>(INITIAL_PROGRESS);
+  const [progress, setProgress] = useState<UserProgress>(() => {
+    const savedProgress = localStorage.getItem('curious_bharat_progress');
+    if (savedProgress) {
+      try {
+        const parsed = JSON.parse(savedProgress);
+        const today = new Date().toDateString();
+        let currentStreak = parsed.streak || 1;
+        
+        if (parsed.lastActiveDate && parsed.lastActiveDate !== today) {
+          const lastActive = new Date(parsed.lastActiveDate);
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          
+          if (lastActive.toDateString() === yesterday.toDateString()) {
+            currentStreak += 1;
+          } else if (lastActive.toDateString() !== today) {
+            currentStreak = 1;
+          }
+        }
+        return {
+          ...parsed,
+          streak: currentStreak,
+          lastActiveDate: today
+        };
+      } catch (err) {
+        console.error('Error loading progress:', err);
+      }
+    }
+    return INITIAL_PROGRESS;
+  });
   const [ownerProfile, setOwnerProfile] = useState<OwnerProfile>(INITIAL_OWNER_PROFILE);
   const [isAIOpen, setIsAIOpen] = useState<boolean>(false);
   const [preloadAIPrompt, setPreloadAIPrompt] = useState<{ mode: string; text: string } | undefined>(undefined);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  const [appLanguage, setAppLanguage] = useState<'en' | 'hi'>('en');
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const [appLanguage, setAppLanguage] = useState<'en' | 'hi'>(() => {
+    const savedLang = localStorage.getItem('pref_app_language');
+    if (savedLang === 'hi' || savedLang === 'en') {
+      return savedLang as 'en' | 'hi';
+    }
+    return 'en';
+  });
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    const savedTheme = localStorage.getItem('pref_theme') || 'dark';
+    return savedTheme === 'dark';
+  });
   const [showMenuDropdown, setShowMenuDropdown] = useState<boolean>(false);
   const [menuTimer, setMenuTimer] = useState<number>(20);
 
@@ -270,7 +320,7 @@ export default function App() {
 
   // Sync and load theme settings
   useEffect(() => {
-    const savedTheme = localStorage.getItem('pref_theme') || 'light';
+    const savedTheme = localStorage.getItem('pref_theme') || 'dark';
     if (savedTheme === 'dark') {
       setIsDarkMode(true);
       document.body.classList.add('dark');
@@ -445,35 +495,7 @@ export default function App() {
 
   // Load state on mount
   useEffect(() => {
-    // 1. Progress
-    const savedProgress = localStorage.getItem('curious_bharat_progress');
-    if (savedProgress) {
-      try {
-        const parsed = JSON.parse(savedProgress);
-        const today = new Date().toDateString();
-        let currentStreak = parsed.streak || 1;
-        
-        if (parsed.lastActiveDate && parsed.lastActiveDate !== today) {
-          const lastActive = new Date(parsed.lastActiveDate);
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          
-          if (lastActive.toDateString() === yesterday.toDateString()) {
-            currentStreak += 1;
-          } else if (lastActive.toDateString() !== today) {
-            currentStreak = 1;
-          }
-        }
-        
-        setProgress({
-          ...parsed,
-          streak: currentStreak,
-          lastActiveDate: today
-        });
-      } catch (err) {
-        console.error('Error loading progress:', err);
-      }
-    }
+    // 1. Progress loaded in useState initialization to prevent login screen flash
 
     // 2. Courses configuration
     const savedCourses = localStorage.getItem('curious_courses');

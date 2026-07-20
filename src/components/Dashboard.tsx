@@ -38,6 +38,7 @@ import ThreeDElement from './ThreeDElement';
 import CommunityComments from './CommunityComments';
 import { getTenQuestions } from '../utils/quizGenerator';
 import FlashcardsView from './FlashcardsView';
+import HorizontalScrollContainer from './HorizontalScrollContainer';
 
 interface DashboardProps {
   courses: Course[];
@@ -933,27 +934,29 @@ export default function Dashboard({
                     </p>
                   </div>
 
-                  {/* Tabs layout */}
-                  <div className="flex flex-wrap gap-2 border-b border-zinc-900 pb-3 relative z-10">
-                    {[
-                      { id: 'lecture', label: '🎥 Video Lecture' },
-                      { id: 'notes', label: '📝 Study Notes' },
-                      { id: 'quiz', label: '🎯 MCQ Quiz' },
-                      { id: 'flashcards', label: '🧠 Concept Mind Map' },
-                      { id: 'dpp', label: '📂 DPP & PDF' }
-                    ].map(tab => (
-                      <button
-                        key={tab.id}
-                        onClick={() => { playSound('click'); setActiveTopicTab(tab.id as any); }}
-                        className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
-                          activeTopicTab === tab.id
-                            ? 'bg-white text-black shadow'
-                            : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-zinc-850 hover:border-zinc-800'
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
+                  {/* Tabs layout with horizontal scroll and responsive audio effects */}
+                  <div className="border-b border-zinc-900 pb-3 relative z-10">
+                    <HorizontalScrollContainer>
+                      {[
+                        { id: 'lecture', label: '🎥 Video Lecture' },
+                        { id: 'notes', label: '📝 Study Notes' },
+                        { id: 'quiz', label: '🎯 MCQ Quiz' },
+                        { id: 'flashcards', label: '🧠 Concept Mind Map' },
+                        { id: 'dpp', label: '📂 DPP & PDF' }
+                      ].map(tab => (
+                        <button
+                          key={tab.id}
+                          onClick={() => { playSound('click'); setActiveTopicTab(tab.id as any); }}
+                          className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer shrink-0 ${
+                            activeTopicTab === tab.id
+                              ? 'bg-white text-black shadow'
+                              : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-zinc-850 hover:border-zinc-800'
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </HorizontalScrollContainer>
                   </div>
 
                   {/* Tab Contents */}

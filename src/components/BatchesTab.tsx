@@ -26,6 +26,7 @@ import { translations } from '../lib/translations';
 import { playSound } from '../utils/audio';
 import { getTenQuestions } from '../utils/quizGenerator';
 import FlashcardsView from './FlashcardsView';
+import ThreeDElement from './ThreeDElement';
 
 interface BatchesTabProps {
   courses: Course[];
@@ -903,22 +904,28 @@ export default function BatchesTab({
         <div className="space-y-6">
           
           {/* Batches Header with Premium theme */}
-          <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 sm:p-8 relative overflow-hidden text-center">
+          <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 sm:p-8 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-[#4F9DFF] to-[#14b8a6]"></div>
             <div className="absolute top-4 right-4 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
             <div className="absolute bottom-4 left-4 w-32 h-32 bg-teal-500/5 rounded-full blur-2xl pointer-events-none" />
             
-            <span className="text-[10px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2.5 py-1 rounded-full font-mono font-bold tracking-widest uppercase mb-2 inline-block">
-              {appLanguage === 'hi' ? '🎓 शैक्षणिक राष्ट्रीय बैच' : '🎓 CURATED ACADEMIC BATCHES'}
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              {appLanguage === 'hi' ? 'चयनित शैक्षणिक पाठ्यक्रम बैच' : 'Curated Academic Syllabi Batches'}
-            </h2>
-            <p className="text-xs sm:text-sm text-zinc-400 mt-2 max-w-lg mx-auto leading-relaxed">
-              {appLanguage === 'hi' 
-                ? 'भारत के शीर्ष व्यवस्थित बैचों में दाखिला लें। पूर्ण सीबीएसई/एनसीईआरटी अध्याय, टेस्ट तैयारी, और आधिकारिक बोर्ड प्रश्न हल करें।'
-                : "Enroll in India's top structured, high-tier classes. Complete CBSE/NCERT chapters, test prep, DPPs, and official CBSE board PYQs."}
-            </p>
+            <div className="flex-1 text-center md:text-left">
+              <span className="text-[10px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2.5 py-1 rounded-full font-mono font-bold tracking-widest uppercase mb-2 inline-block">
+                {appLanguage === 'hi' ? '🎓 शैक्षणिक राष्ट्रीय बैच' : '🎓 CURATED ACADEMIC BATCHES'}
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                {appLanguage === 'hi' ? 'चयनित शैक्षणिक पाठ्यक्रम बैच' : 'Curated Academic Syllabi Batches'}
+              </h2>
+              <p className="text-xs sm:text-sm text-zinc-400 mt-2 max-w-lg leading-relaxed">
+                {appLanguage === 'hi' 
+                  ? 'भारत के शीर्ष व्यवस्थित बैचों में दाखिला लें। पूर्ण सीबीएसई/एनसीईआरटी अध्याय, टेस्ट तैयारी, और आधिकारिक बोर्ड प्रश्न हल करें।'
+                  : "Enroll in India's top structured, high-tier classes. Complete CBSE/NCERT chapters, test prep, DPPs, and official CBSE board PYQs."}
+              </p>
+            </div>
+
+            <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 flex items-center justify-center bg-zinc-900/40 rounded-full border border-zinc-850 p-2">
+              <ThreeDElement type="runningBoy" className="w-full h-full" />
+            </div>
           </div>
 
           {/* Embedded Search and Toggleable Filter Bar */}
@@ -1071,16 +1078,14 @@ export default function BatchesTab({
                               referrerPolicy="no-referrer"
                             />
                           ) : (
-                            <div className="flex flex-col items-center space-y-2">
-                              <div className="flex -space-x-3">
-                                <div className="w-12 h-12 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-[11px] font-extrabold text-indigo-400">
-                                  {appLanguage === 'hi' ? 'आलोक' : 'ALOK'}
-                                </div>
-                                <div className="w-12 h-12 rounded-full bg-teal-600/20 border border-teal-500/30 flex items-center justify-center text-[11px] font-extrabold text-teal-400 z-10">
-                                  {appLanguage === 'hi' ? 'रॉय' : 'ROY'}
-                                </div>
+                            <div className="flex flex-col items-center justify-center p-4 text-center">
+                              <div className="w-20 h-20 relative mb-1 flex items-center justify-center">
+                                <ThreeDElement 
+                                  type={course.id.includes('biology') ? 'walkingGirl' : (course.id.includes('chemistry') ? 'shortsBoy' : 'backpackBoy')} 
+                                  className="w-full h-full" 
+                                />
                               </div>
-                              <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-600">Premium Study Batch</span>
+                              <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500">Premium Study Batch</span>
                             </div>
                           )}
 

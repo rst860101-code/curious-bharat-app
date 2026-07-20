@@ -1,8 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { motion, useMotionValue, useSpring } from 'motion/react';
+
 const imageUrl = '/src/assets/images/kalu_and_buddhu_1784268211413.jpg';
 
-export type ThreeDElementType = 'priceTag' | 'trophy' | 'cap' | 'questionMark' | 'car' | 'tree' | 'robot' | 'boy';
+export type ThreeDElementType = 
+  | 'priceTag' 
+  | 'trophy' 
+  | 'trophy2'
+  | 'medal'
+  | 'cap' 
+  | 'questionMark' 
+  | 'helpMan'
+  | 'car' 
+  | 'blueCar'
+  | 'motorcycle'
+  | 'tree' 
+  | 'smallTree'
+  | 'robot' 
+  | 'boy'
+  | 'runningBoy'
+  | 'backpackBoy'
+  | 'shortsBoy'
+  | 'skirtGirl'
+  | 'walkingGirl'
+  | 'medalGirl'
+  | 'bottleGirl';
 
 interface ThreeDElementProps {
   type: ThreeDElementType;
@@ -13,14 +35,32 @@ interface ThreeDElementProps {
 }
 
 const SPRITE_MAP: Record<ThreeDElementType, { x: string; y: string; zoom: string; label: string }> = {
-  cap: { x: '88.5%', y: '34.5%', zoom: '850%', label: 'Cap' },
-  trophy: { x: '94.5%', y: '74.5%', zoom: '850%', label: 'Trophy' },
-  priceTag: { x: '45.5%', y: '83.5%', zoom: '1000%', label: 'Sticker' },
-  questionMark: { x: '23.5%', y: '49.5%', zoom: '950%', label: 'Help' },
-  car: { x: '39.5%', y: '53.5%', zoom: '800%', label: 'Sprint' },
-  tree: { x: '13.2%', y: '80.0%', zoom: '700%', label: 'Growth' },
-  robot: { x: '67.0%', y: '16.0%', zoom: '900%', label: 'AI Buddy' }, // Girl with water bottle as study buddy
-  boy: { x: '18.2%', y: '15.5%', zoom: '900%', label: 'Explorer' }, // Boy pointing with glasses!
+  // Row 1: Students & Robots
+  runningBoy: { x: '5.0%', y: '16.0%', zoom: '900%', label: 'Runner' },
+  boy: { x: '18.2%', y: '15.5%', zoom: '900%', label: 'Pointer' },
+  backpackBoy: { x: '29.0%', y: '15.5%', zoom: '900%', label: 'Student' },
+  shortsBoy: { x: '39.0%', y: '15.5%', zoom: '900%', label: 'Scholar' },
+  skirtGirl: { x: '48.5%', y: '15.5%', zoom: '900%', label: 'Waving' },
+  walkingGirl: { x: '57.0%', y: '15.5%', zoom: '900%', label: 'Explorer' },
+  medalGirl: { x: '67.0%', y: '15.5%', zoom: '900%', label: 'Achiever' },
+  bottleGirl: { x: '77.0%', y: '15.5%', zoom: '900%', label: 'Study Buddy' },
+  robot: { x: '88.5%', y: '15.5%', zoom: '900%', label: 'Bharat AI' },
+
+  // Row 2: Questions, Cars, Motorcycles, Caps
+  questionMark: { x: '6.5%', y: '49.5%', zoom: '950%', label: 'Query' },
+  helpMan: { x: '19.5%', y: '49.5%', zoom: '950%', label: 'Guidance' },
+  car: { x: '38.5%', y: '53.5%', zoom: '800%', label: 'Velocity' },
+  motorcycle: { x: '57.5%', y: '53.5%', zoom: '800%', label: 'Acceleration' },
+  blueCar: { x: '76.5%', y: '53.5%', zoom: '800%', label: 'Physics' },
+  cap: { x: '89.5%', y: '44.5%', zoom: '850%', label: 'Graduate' },
+
+  // Row 3: Trees, Tags, Stickers, Trophies, Medals
+  tree: { x: '10.5%', y: '80.0%', zoom: '700%', label: 'Biology' },
+  smallTree: { x: '24.5%', y: '80.0%', zoom: '700%', label: 'Plant Life' },
+  priceTag: { x: '44.5%', y: '80.5%', zoom: '1000%', label: 'Premium' },
+  trophy: { x: '94.5%', y: '74.5%', zoom: '850%', label: 'Grand Trophy' },
+  trophy2: { x: '85.5%', y: '80.5%', zoom: '850%', label: 'Merit Trophy' },
+  medal: { x: '76.0%', y: '80.5%', zoom: '850%', label: 'Top Medal' }
 };
 
 export default function ThreeDElement({
@@ -30,14 +70,18 @@ export default function ThreeDElement({
   interactive = true,
   colorOverride
 }: ThreeDElementProps) {
+  const coords = SPRITE_MAP[type] || SPRITE_MAP.boy;
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  // High-performance springs for hover tilt effect
-  const rotateX = useSpring(0, { damping: 15, stiffness: 100 });
-  const rotateY = useSpring(0, { damping: 15, stiffness: 100 });
-  const scale = useSpring(1, { damping: 12, stiffness: 120 });
-  
-  // Page scroll tracking for parallax offset
+
+  // High-performance spring values for 3D physics tilt interaction
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const rotateX = useSpring(mouseY, { damping: 20, stiffness: 120 });
+  const rotateY = useSpring(mouseX, { damping: 20, stiffness: 120 });
+  const scale = useSpring(1, { damping: 15, stiffness: 150 });
+
+  // Page scroll parallax position
   const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
@@ -48,10 +92,8 @@ export default function ThreeDElement({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Compute parallax offset - subtle vertical translation on scroll
-  const parallaxY = scrollY * -0.06;
+  const parallaxY = scrollY * -0.05; // Gentle reactive scroll translation
 
-  // Track cursor coordinates relative to center of element
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!interactive || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -59,89 +101,32 @@ export default function ThreeDElement({
     const height = rect.height;
     const centerX = rect.left + width / 2;
     const centerY = rect.top + height / 2;
-    
-    // Normalize values between -1 and 1
-    const x = (e.clientX - centerX) / (width / 2);
+
+    const x = (e.clientX - centerX) / (width / 2); // Ranges -1 to 1
     const y = (e.clientY - centerY) / (height / 2);
-    
-    // Set rotX (vertical tilt) and rotY (horizontal tilt)
-    rotateX.set(-y * 22); // Tilt up to 22 degrees
-    rotateY.set(x * 22);
+
+    // Limit maximum tilt angle for classy presentation
+    mouseX.set(x * 18);
+    mouseY.set(-y * 18);
   };
 
   const handlePointerEnter = () => {
     if (interactive) {
-      scale.set(1.08); // Subtle spring expansion on hover
+      scale.set(1.08); // Spring pop on hover
     }
   };
 
   const handlePointerLeave = () => {
     if (interactive) {
       scale.set(1);
-      rotateX.set(0);
-      rotateY.set(0);
+      mouseX.set(0);
+      mouseY.set(0);
     }
   };
 
-  // Render cropped high-quality image crop from the sprite sheet
-  const renderSprite = () => {
-    const coords = SPRITE_MAP[type] || SPRITE_MAP.boy;
-    
-    return (
-      <div className="w-full h-full flex items-center justify-center relative p-1.5">
-        {/* Soft atmospheric backlight gradient representing high-quality glow */}
-        <div className="absolute inset-2 bg-gradient-to-tr from-zinc-800 to-zinc-950 rounded-2xl -z-10 shadow-lg border border-zinc-800/60" />
-        
-        {/* Interactive circular/rounded viewport for the sprite */}
-        <div className="w-full h-full rounded-2xl overflow-hidden relative border-2 border-zinc-700/80 hover:border-blue-500/80 shadow-md transition-colors duration-300 bg-zinc-900/40">
-          <div 
-            style={{
-              backgroundImage: `url(${imageUrl})`,
-              backgroundPosition: `${coords.x} ${coords.y}`,
-              backgroundSize: coords.zoom,
-              backgroundRepeat: 'no-repeat',
-              width: '100%',
-              height: '100%',
-              transform: 'scale(1.02)',
-              filter: 'contrast(1.08) saturate(1.12)',
-            }}
-            className="transition-transform duration-500 ease-out hover:scale-110"
-            referrerPolicy="no-referrer"
-          />
-          
-          {/* Subtle aesthetic tag indicating study item */}
-          <div className="absolute bottom-1 right-1.5 bg-black/80 backdrop-blur-xs text-[8px] font-bold font-mono text-zinc-400 px-1.5 py-0.5 rounded-md border border-zinc-800/80 select-none">
-            {coords.label}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Determine standard float values - if autoRotate is enabled, float up and down slightly
-  const floatTransition = autoRotate 
-    ? {
-        y: {
-          duration: 3 + (type.charCodeAt(0) % 3) * 0.5, // Slightly staggered periods to prevent uniformity
-          repeat: Infinity,
-          repeatType: "reverse" as const,
-          ease: "easeInOut"
-        },
-        rotate: {
-          duration: 6 + (type.charCodeAt(1) % 4),
-          repeat: Infinity,
-          repeatType: "reverse" as const,
-          ease: "easeInOut"
-        }
-      }
-    : undefined;
-
-  const floatAnimation = autoRotate
-    ? {
-        y: [0, -10, 0],
-        rotate: [0, 1.5, -1.5, 0]
-      }
-    : {};
+  // Staggered periods to prevent uniform floating amongst multiple elements
+  const staggerFactor = (type.charCodeAt(0) % 5) * 0.4;
+  const floatDuration = 3 + staggerFactor;
 
   return (
     <motion.div
@@ -153,16 +138,60 @@ export default function ThreeDElement({
         rotateX: rotateX,
         rotateY: rotateY,
         scale: scale,
-        y: parallaxY, // Smooth physical vertical parallax on scroll
-        transformStyle: "preserve-3d"
+        y: autoRotate ? parallaxY : undefined,
+        transformStyle: 'preserve-3d',
       }}
-      animate={floatAnimation}
-      transition={floatTransition}
+      animate={
+        autoRotate
+          ? {
+              y: [0, -8, 0],
+              rotateZ: [0, 1.2, -1.2, 0],
+            }
+          : {}
+      }
+      transition={
+        autoRotate
+          ? {
+              y: {
+                duration: floatDuration,
+                repeat: Infinity,
+                repeatType: 'reverse',
+                ease: 'easeInOut',
+              },
+              rotateZ: {
+                duration: floatDuration * 1.5,
+                repeat: Infinity,
+                repeatType: 'reverse',
+                ease: 'easeInOut',
+              },
+            }
+          : undefined
+      }
       className={`${className} cursor-grab active:cursor-grabbing select-none outline-none flex items-center justify-center`}
     >
-      <div className="w-full h-full relative" style={{ transform: "translateZ(30px)" }}>
-        {renderSprite()}
+      <div 
+        className="w-full h-full flex items-center justify-center relative"
+        style={{ transform: 'translateZ(25px)' }}
+      >
+        {/* Soft shadow anchor underneath to give realistic 3D hovering depth */}
+        {autoRotate && (
+          <div className="absolute -bottom-1 left-[20%] right-[20%] h-1 bg-black/15 blur-sm rounded-full pointer-events-none transition-transform duration-500 hover:scale-75" />
+        )}
+        <div className="w-full h-full overflow-hidden relative bg-transparent">
+          <div 
+            style={{
+              backgroundImage: `url(${imageUrl})`,
+              backgroundPosition: `${coords.x} ${coords.y}`,
+              backgroundSize: coords.zoom,
+              backgroundRepeat: 'no-repeat',
+              width: '100%',
+              height: '100%',
+            }}
+            referrerPolicy="no-referrer"
+          />
+        </div>
       </div>
     </motion.div>
   );
 }
+

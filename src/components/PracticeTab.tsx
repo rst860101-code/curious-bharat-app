@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { playSound } from '../utils/audio';
+import HorizontalScrollContainer from './HorizontalScrollContainer';
 
 interface PracticeTabProps {
   progress: any;
@@ -419,37 +420,39 @@ export default function PracticeTab({ progress, onUpdateProgress, studentName, a
           </div>
 
           {/* TAB CONTROLS - HIGHLY STYLISH PILL SWITCHER */}
-          <div className="flex justify-center">
-            <div className="bg-zinc-950 border border-zinc-900/90 p-1.5 rounded-2xl flex gap-1.5 shadow-md">
-              <button
-                onClick={() => {
-                  playSound('click');
-                  setPracticeSubTab('prompt');
-                }}
-                className={`px-4.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
-                  practiceSubTab === 'prompt'
-                    ? 'bg-white text-black shadow-lg font-black'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-900/40'
-                }`}
-              >
-                <Mic className="w-3.5 h-3.5" />
-                <span>{appLanguage === 'hi' ? 'वाणी/प्रॉम्प्ट द्वारा परीक्षा' : 'Voice/Text Prompt Exam'}</span>
-              </button>
+          <div className="flex justify-center w-full max-w-md mx-auto">
+            <div className="bg-zinc-950 border border-zinc-900/90 p-1.5 rounded-2xl w-full shadow-md">
+              <HorizontalScrollContainer innerClassName="justify-center">
+                <button
+                  onClick={() => {
+                    playSound('click');
+                    setPracticeSubTab('prompt');
+                  }}
+                  className={`px-4.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0 ${
+                    practiceSubTab === 'prompt'
+                      ? 'bg-white text-black shadow-lg font-black'
+                      : 'text-zinc-400 hover:text-white hover:bg-zinc-900/40'
+                  }`}
+                >
+                  <Mic className="w-3.5 h-3.5" />
+                  <span>{appLanguage === 'hi' ? 'वाणी/प्रॉम्प्ट द्वारा परीक्षा' : 'Voice/Text Prompt Exam'}</span>
+                </button>
 
-              <button
-                onClick={() => {
-                  playSound('click');
-                  setPracticeSubTab('parameter');
-                }}
-                className={`px-4.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
-                  practiceSubTab === 'parameter'
-                    ? 'bg-white text-black shadow-lg font-black'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-900/40'
-                }`}
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>{appLanguage === 'hi' ? 'पाठ्यक्रम मापदंड परीक्षा' : 'NCERT Parameter Exam'}</span>
-              </button>
+                <button
+                  onClick={() => {
+                    playSound('click');
+                    setPracticeSubTab('parameter');
+                  }}
+                  className={`px-4.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0 ${
+                    practiceSubTab === 'parameter'
+                      ? 'bg-white text-black shadow-lg font-black'
+                      : 'text-zinc-400 hover:text-white hover:bg-zinc-900/40'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>{appLanguage === 'hi' ? 'पाठ्यक्रम मापदंड परीक्षा' : 'NCERT Parameter Exam'}</span>
+                </button>
+              </HorizontalScrollContainer>
             </div>
           </div>
 

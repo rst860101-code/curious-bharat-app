@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { Course, Chapter, ChapterSection, AppCustomization, Flashcard, QuizQuestion, StudentAnalysisRecord, OwnerProfile } from '../types';
 import { playSound } from '../utils/audio';
+import HorizontalScrollContainer from './HorizontalScrollContainer';
 
 interface AdminPortalProps {
   courses: Course[];
@@ -516,43 +517,45 @@ export default function AdminPortal({
         </div>
 
         {/* Horizontal scrollable tab buttons */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-          <button
-            type="button"
-            onClick={() => { playSound('click'); setActiveSubTab('courses'); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shrink-0 ${
-              activeSubTab === 'courses' ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-400'
-            }`}
-          >
-            📁 Courses & Chapters
-          </button>
-          <button
-            type="button"
-            onClick={() => { playSound('click'); setActiveSubTab('student-analysis'); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shrink-0 ${
-              activeSubTab === 'student-analysis' ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-400'
-            }`}
-          >
-            📊 Students
-          </button>
-          <button
-            type="button"
-            onClick={() => { playSound('click'); setActiveSubTab('apk-releases'); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shrink-0 ${
-              activeSubTab === 'apk-releases' ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-400'
-            }`}
-          >
-            🤖 APK Release
-          </button>
-          <button
-            type="button"
-            onClick={() => { playSound('click'); setActiveSubTab('owner-profile'); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shrink-0 ${
-              activeSubTab === 'owner-profile' ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-400'
-            }`}
-          >
-            ⚙️ Ecosystem
-          </button>
+        <div className="w-full relative z-10 pb-1">
+          <HorizontalScrollContainer>
+            <button
+              type="button"
+              onClick={() => { playSound('click'); setActiveSubTab('courses'); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shrink-0 ${
+                activeSubTab === 'courses' ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-400'
+              }`}
+            >
+              📁 Courses & Chapters
+            </button>
+            <button
+              type="button"
+              onClick={() => { playSound('click'); setActiveSubTab('student-analysis'); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shrink-0 ${
+                activeSubTab === 'student-analysis' ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-400'
+              }`}
+            >
+              📊 Students
+            </button>
+            <button
+              type="button"
+              onClick={() => { playSound('click'); setActiveSubTab('apk-releases'); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shrink-0 ${
+                activeSubTab === 'apk-releases' ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-400'
+              }`}
+            >
+              🤖 APK Release
+            </button>
+            <button
+              type="button"
+              onClick={() => { playSound('click'); setActiveSubTab('owner-profile'); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shrink-0 ${
+                activeSubTab === 'owner-profile' ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-400'
+              }`}
+            >
+              ⚙️ Ecosystem
+            </button>
+          </HorizontalScrollContainer>
         </div>
 
         {/* Mobile Inline Editor state toggle bar */}

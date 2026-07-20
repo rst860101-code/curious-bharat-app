@@ -20,6 +20,7 @@ import { ChatMessage, UserProgress } from '../types';
 import { translations } from '../lib/translations';
 import { playSound } from '../utils/audio';
 import ThreeDElement from './ThreeDElement';
+import HorizontalScrollContainer from './HorizontalScrollContainer';
 
 interface AIAssistantProps {
   currentChapterTitle?: string;
@@ -630,20 +631,22 @@ export default function AIAssistant({
           <span className={`${isDarkMode ? 'text-zinc-500' : 'text-slate-500'} flex items-center gap-1 font-mono text-[10px] font-bold`}>
             <Sliders className="w-3.5 h-3.5" /> {t.ai_track}
           </span>
-          <div className="flex gap-1.5 overflow-x-auto max-w-[285px] sm:max-w-lg no-scrollbar">
-            {(['doubt', 'numerical', 'analogy', 'quiz'] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setStudyMode(mode)}
-                className={`px-3 py-1 rounded text-[10px] font-bold capitalize transition cursor-pointer shrink-0 ${
-                  studyMode === mode
-                    ? (isDarkMode ? 'bg-white text-black font-extrabold' : 'bg-orange-600 text-white font-extrabold shadow-sm')
-                    : (isDarkMode ? 'bg-zinc-950 text-zinc-400 border border-zinc-850 hover:bg-zinc-900' : 'bg-white text-slate-600 border border-orange-100/80 hover:bg-orange-50/40')
-                }`}
-              >
-                {mode === 'doubt' ? t.ai_track_concept : mode === 'numerical' ? t.ai_track_numerical : mode === 'analogy' ? t.ai_track_analogy : t.ai_track_quiz}
-              </button>
-            ))}
+          <div className="max-w-[285px] sm:max-w-lg">
+            <HorizontalScrollContainer>
+              {(['doubt', 'numerical', 'analogy', 'quiz'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => { playSound('click'); setStudyMode(mode); }}
+                  className={`px-3 py-1 rounded text-[10px] font-bold capitalize transition cursor-pointer shrink-0 ${
+                    studyMode === mode
+                      ? (isDarkMode ? 'bg-white text-black font-extrabold' : 'bg-orange-600 text-white font-extrabold shadow-sm')
+                      : (isDarkMode ? 'bg-zinc-950 text-zinc-400 border border-zinc-850 hover:bg-zinc-900' : 'bg-white text-slate-600 border border-orange-100/80 hover:bg-orange-50/40')
+                  }`}
+                >
+                  {mode === 'doubt' ? t.ai_track_concept : mode === 'numerical' ? t.ai_track_numerical : mode === 'analogy' ? t.ai_track_analogy : t.ai_track_quiz}
+                </button>
+              ))}
+            </HorizontalScrollContainer>
           </div>
         </div>
 
