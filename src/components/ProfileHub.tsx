@@ -381,22 +381,27 @@ export default function ProfileHub({
               </button>
             </div>
           ) : (
-            <div>
-              <h3 className="text-base font-extrabold text-white flex items-center justify-center md:justify-start gap-1.5">
-                {name}
-                <span onClick={() => setIsEditingProfile(true)} className="text-[10px] text-zinc-500 hover:text-white cursor-pointer underline font-mono">
-                  edit
-                </span>
-              </h3>
-              <p className="text-xs text-zinc-400">{school}</p>
-              <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
-                <span className="text-[9px] bg-zinc-900 border border-zinc-850 text-zinc-400 px-2 py-0.5 rounded-full font-mono">
-                  {grade}
-                </span>
-                <span className="text-[9px] bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 px-2 py-0.5 rounded-full font-mono flex items-center gap-1">
-                  <Award className="w-3 h-3 text-emerald-400" />
-                  <span>Certified Scholar</span>
-                </span>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="w-16 h-16 shrink-0 bg-zinc-900/40 border border-zinc-850 rounded-2xl p-1 flex items-center justify-center relative shadow-inner" title="Student Companion Mascot">
+                <ThreeDElement type="medalGirl" className="w-full h-full" autoRotate={true} interactive={true} />
+              </div>
+              <div className="text-center sm:text-left">
+                <h3 className="text-base font-extrabold text-white flex items-center justify-center sm:justify-start gap-1.5">
+                  {name}
+                  <span onClick={() => setIsEditingProfile(true)} className="text-[10px] text-zinc-500 hover:text-white cursor-pointer underline font-mono">
+                    edit
+                  </span>
+                </h3>
+                <p className="text-xs text-zinc-400">{school}</p>
+                <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-2">
+                  <span className="text-[9px] bg-zinc-900 border border-zinc-850 text-zinc-400 px-2 py-0.5 rounded-full font-mono">
+                    {grade}
+                  </span>
+                  <span className="text-[9px] bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 px-2 py-0.5 rounded-full font-mono flex items-center gap-1">
+                    <Award className="w-3 h-3 text-emerald-400" />
+                    <span>Certified Scholar</span>
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -407,13 +412,13 @@ export default function ProfileHub({
           {/* Interactive Graduation Cap, Gold Trophy and Gold Medal elements */}
           <div className="flex gap-2 items-center">
             <div className="w-16 h-16 relative hidden sm:block" title="Graduation Cap">
-              <ThreeDElement type="cap" className="w-full h-full" autoRotate={false} interactive={false} />
+              <ThreeDElement type="cap" className="w-full h-full" autoRotate={true} interactive={true} />
             </div>
             <div className="w-16 h-16 relative hidden sm:block" title="Gold Trophy">
-              <ThreeDElement type="trophy" className="w-full h-full" autoRotate={false} interactive={false} />
+              <ThreeDElement type="trophy" className="w-full h-full" autoRotate={true} interactive={true} />
             </div>
             <div className="w-16 h-16 relative hidden sm:block" title="Gold Medal">
-              <ThreeDElement type="medal" className="w-full h-full" autoRotate={false} interactive={false} />
+              <ThreeDElement type="medal" className="w-full h-full" autoRotate={true} interactive={true} />
             </div>
           </div>
 

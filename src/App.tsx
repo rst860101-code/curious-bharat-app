@@ -806,7 +806,7 @@ export default function App() {
                     >
                       <div className="px-2.5 py-1.5 text-[10px] font-mono text-zinc-500 uppercase tracking-wider font-extrabold border-b border-zinc-900 flex justify-between items-center">
                         <span>{appLanguage === 'hi' ? 'त्वरित नेविगेशन' : 'QUICK NAVIGATION'}</span>
-                        <span className="text-blue-400 font-bold font-mono animate-pulse">{menuTimer}s</span>
+                        {/* Timer is inbuild but not shown */}
                       </div>
                       
                       <button

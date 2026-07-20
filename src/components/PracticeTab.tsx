@@ -19,6 +19,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { playSound } from '../utils/audio';
 import HorizontalScrollContainer from './HorizontalScrollContainer';
+import ThreeDElement from './ThreeDElement';
 
 interface PracticeTabProps {
   progress: any;
@@ -395,19 +396,24 @@ export default function PracticeTab({ progress, onUpdateProgress, studentName, a
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
             <div className="absolute -bottom-10 -left-10 w-44 h-44 bg-indigo-500/5 rounded-full blur-2xl" />
             
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-              <div className="space-y-1.5 text-left">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-1.5 text-left flex-1">
                 <span className="text-[10px] font-mono tracking-widest uppercase font-black text-blue-400 bg-blue-950/65 border border-blue-900/50 px-2.5 py-1 rounded-full">
                   {appLanguage === 'hi' ? 'परम मूल्यांकन प्रयोगशाला' : 'ULTIMATE ASSESSMENT LAB'}
                 </span>
                 <h2 className="text-2xl font-black text-white tracking-tight text-white-force">
                   {appLanguage === 'hi' ? 'एआई कस्टमाइज्ड परीक्षा हब' : 'AI Custom Exam Hub'}
                 </h2>
-                <p className="text-xs text-white max-w-xl leading-relaxed text-white-force">
+                <p className="text-xs text-zinc-300 max-w-xl leading-relaxed text-white-force">
                   {appLanguage === 'hi' 
                     ? 'अपनी इच्छानुसार बोलकर या टाइप करके अपना स्वयं का पेपर डिज़ाइन करें, या सीबीएसई ब्लू प्रिंट के अनुसार मानक मापदंडों का चयन करें।'
                     : 'Design your own practice sets simply by speaking or typing your demands, or select standard CBSE blueprint parameters.'}
                 </p>
+              </div>
+
+              {/* Responsive 3D Robot Mascot */}
+              <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 bg-zinc-900/50 border border-zinc-800/80 rounded-3xl p-1.5 flex items-center justify-center relative shadow-lg">
+                <ThreeDElement type="robot" className="w-full h-full" autoRotate={true} interactive={true} />
               </div>
 
               {/* Status Pill */}
