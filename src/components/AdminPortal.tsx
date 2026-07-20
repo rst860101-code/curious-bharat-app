@@ -1545,10 +1545,14 @@ export default function AdminPortal({
                     return;
                   }
 
-                  const newRecord = {
+                  const matchedCourse = courses.find(c => c.title === course);
+                  const courseIdVal = matchedCourse ? matchedCourse.id : 'manual';
+
+                  const newRecord: StudentAnalysisRecord = {
                     id: `record-${Date.now()}`,
                     studentName: name,
                     contactDetails: contact,
+                    courseId: courseIdVal,
                     courseTitle: course,
                     price: price.startsWith('₹') ? price : `₹${price}`,
                     paymentDetails: utr,
@@ -1556,7 +1560,9 @@ export default function AdminPortal({
                     purchasedAt: new Date().toLocaleString()
                   };
 
-                  onUpdateStudentRecords([newRecord, ...studentAnalysisRecords]);
+                  if (onUpdateStudentAnalysisRecords) {
+                    onUpdateStudentAnalysisRecords([newRecord, ...studentAnalysisRecords]);
+                  }
                   target.reset();
                   showSuccess("Manual row injected into spreadsheet successfully!");
                 }}
@@ -1714,7 +1720,9 @@ export default function AdminPortal({
                                     const updated = studentAnalysisRecords.map(r => 
                                       r.id === record.id ? { ...r, studentName: e.target.value } : r
                                     );
-                                    onUpdateStudentRecords(updated);
+                                    if (onUpdateStudentAnalysisRecords) {
+                                      onUpdateStudentAnalysisRecords(updated);
+                                    }
                                   }}
                                   className="w-full bg-transparent border-none text-white outline-none focus:bg-zinc-900 focus:px-1.5 focus:py-0.5 rounded font-bold"
                                 />
@@ -1729,7 +1737,9 @@ export default function AdminPortal({
                                     const updated = studentAnalysisRecords.map(r => 
                                       r.id === record.id ? { ...r, contactDetails: e.target.value } : r
                                     );
-                                    onUpdateStudentRecords(updated);
+                                    if (onUpdateStudentAnalysisRecords) {
+                                      onUpdateStudentAnalysisRecords(updated);
+                                    }
                                   }}
                                   className="w-full bg-transparent border-none text-zinc-400 outline-none focus:bg-zinc-900 focus:px-1.5 focus:py-0.5 rounded"
                                 />
@@ -1878,7 +1888,9 @@ export default function AdminPortal({
                           onClick={() => {
                             playSound('click');
                             if (confirm(`Are you sure you want to purge ${currentRecord.studentName} from enrollment logs?`)) {
-                              onUpdateStudentRecords(studentAnalysisRecords.filter(r => r.id !== currentRecord.id));
+                              if (onUpdateStudentAnalysisRecords) {
+                                onUpdateStudentAnalysisRecords(studentAnalysisRecords.filter(r => r.id !== currentRecord.id));
+                              }
                               setSelectedSpreadsheetRowId(null);
                               showSuccess("Student record purged from spreadsheet ledger.");
                             }

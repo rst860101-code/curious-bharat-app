@@ -24,6 +24,8 @@ import { Course, StudentAnalysisRecord, OwnerProfile, Chapter, Topic } from '../
 import { dbService } from '../lib/firebase';
 import { translations } from '../lib/translations';
 import { playSound } from '../utils/audio';
+import { getTenQuestions } from '../utils/quizGenerator';
+import FlashcardsView from './FlashcardsView';
 
 interface BatchesTabProps {
   courses: Course[];
@@ -419,7 +421,7 @@ export default function BatchesTab({
                 <div className="space-y-4 max-w-xl mx-auto bg-zinc-900/20 border border-zinc-900 p-6 rounded-2xl">
                   {selectedTopic.quiz && selectedTopic.quiz.length > 0 ? (
                     (() => {
-                      const qList = selectedTopic.quiz;
+                      const qList = getTenQuestions(selectedTopic.quiz, selectedTopic.id, selectedTopic.title, selectedTopic.subject || '');
                       const isFinished = topicQuizIndex >= qList.length;
 
                       if (isFinished) {
@@ -554,130 +556,37 @@ export default function BatchesTab({
                   )}
                 </div>
               )}
-
-              {/* 4. MIND MAP */}
               {activeTopicTab === 'flashcards' && (
-                <div className="space-y-4 max-w-2xl mx-auto bg-zinc-900/20 border border-zinc-900 p-6 rounded-3xl text-center">
-                  <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
-                    <span className="uppercase">Interactive Mind Map Concepts</span>
-                    <span>+5 XP / Explored</span>
-                  </div>
-
-                  {selectedTopic.flashcards && selectedTopic.flashcards.length > 0 ? (
-                    (() => {
-                      const fcList = selectedTopic.flashcards;
-                      const activeFc = fcList[topicFcIndex];
-                      return (
-                        <div className="space-y-5 text-left">
-                          {/* Radial Node SVG connections */}
-                          <div className="bg-black/40 border border-zinc-900 p-3 rounded-2xl h-48 relative overflow-hidden flex items-center justify-center">
-                            <div className="absolute inset-0 bg-[radial-gradient(#1e1b4b_1px,transparent_1px)] bg-[size:16px_16px] opacity-40" />
-                            
-                            {/* Connect Center with active node */}
-                            <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                              <line x1="50%" y1="50%" x2="50%" y2="25%" className="stroke-zinc-800 stroke-2" />
-                              {fcList.map((_, i) => {
-                                const angle = (i / fcList.length) * 2 * Math.PI - Math.PI / 2;
-                                const distance = 70;
-                                const isCurrent = i === topicFcIndex;
-                                return (
-                                  <line
-                                    key={i}
-                                    x1="50%"
-                                    y1="50%"
-                                    x2={`calc(50% + ${distance * Math.cos(angle)}px)`}
-                                    y2={`calc(50% + ${distance * Math.sin(angle)}px)`}
-                                    className={`stroke-2 transition-all ${isCurrent ? 'stroke-blue-500' : 'stroke-zinc-900'}`}
-                                  />
-                                );
-                              })}
-                            </svg>
-
-                            {/* Core Node */}
-                            <div className="absolute w-24 h-12 bg-blue-950 border border-blue-900 rounded-xl flex items-center justify-center p-2 text-center shadow-lg z-10">
-                              <span className="text-[9px] font-black text-white truncate">{selectedTopic.title}</span>
-                            </div>
-
-                            {/* Node markers */}
-                            {fcList.map((fc, i) => {
-                              const angle = (i / fcList.length) * 2 * Math.PI - Math.PI / 2;
-                              const distance = 70;
-                              const isCurrent = i === topicFcIndex;
-                              return (
-                                <button
-                                  key={fc.id}
-                                  onClick={() => { playSound('click'); setTopicFcIndex(i); setTopicFcFlipped(false); }}
-                                  className={`absolute w-8 h-8 rounded-full border flex items-center justify-center text-[10px] font-black transition z-10 cursor-pointer ${
-                                    isCurrent 
-                                      ? 'bg-blue-600 border-white text-white scale-110 animate-pulse' 
-                                      : 'bg-zinc-900 border-zinc-850 text-zinc-500 hover:text-white'
-                                  }`}
-                                  style={{
-                                    transform: `translate(${distance * Math.cos(angle)}px, ${distance * Math.sin(angle)}px)`
-                                  }}
-                                >
-                                  {i + 1}
-                                </button>
-                              );
-                            })}
-                          </div>
-
-                          {/* Selected Concept Card */}
-                          <div className="bg-zinc-950 border border-zinc-900 p-5 rounded-2xl space-y-3.5 relative">
-                            <span className="text-[8px] font-mono uppercase bg-zinc-900 px-2 py-0.5 rounded text-zinc-500">Selected Concept Branch</span>
-                            <h4 className="text-xs sm:text-sm font-extrabold text-white">{activeFc.front}</h4>
-                            
-                            <div className="bg-black/35 p-3.5 rounded-xl border border-zinc-900/50">
-                              <span className="text-[8px] uppercase tracking-wider font-mono text-zinc-600 block mb-1">Scientific Explanation</span>
-                              <p className="text-xs text-zinc-300 leading-relaxed font-sans">{activeFc.back}</p>
-                            </div>
-
-                            <div className="flex justify-between items-center pt-2">
-                              <div className="flex gap-1.5">
-                                <button
-                                  onClick={() => {
-                                    playSound('click');
-                                    setTopicFcIndex(prev => (prev - 1 + fcList.length) % fcList.length);
-                                    setTopicFcFlipped(false);
-                                  }}
-                                  className="px-2.5 py-1.5 bg-zinc-900 hover:bg-zinc-850 border border-zinc-850 text-zinc-400 hover:text-white rounded-lg text-[11px] cursor-pointer"
-                                >
-                                  ← Prev Node
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    playSound('click');
-                                    setTopicFcIndex(prev => (prev + 1) % fcList.length);
-                                    setTopicFcFlipped(false);
-                                  }}
-                                  className="px-2.5 py-1.5 bg-zinc-900 hover:bg-zinc-850 border border-zinc-850 text-zinc-400 hover:text-white rounded-lg text-[11px] cursor-pointer"
-                                >
-                                  Next Node →
-                                </button>
-                              </div>
-
-                              <button
-                                onClick={() => {
-                                  playSound('success');
-                                  onUpdateProgress({
-                                    ...progress,
-                                    totalXP: (progress.totalXP || 0) + 5
-                                  });
-                                }}
-                                className="px-3.5 py-1.5 bg-white hover:bg-zinc-200 text-black font-extrabold text-[11px] rounded-lg cursor-pointer"
-                              >
-                                Mark Concept Explored (+5)
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()
-                  ) : (
-                    <div className="text-center py-8 text-zinc-500 text-xs">
-                      Active recall concepts are being formulated for this syllabus track.
-                    </div>
-                  )}
+                <div className="w-full">
+                  <FlashcardsView
+                    embedded={true}
+                    chapter={{
+                      id: selectedTopic.id,
+                      title: selectedTopic.title,
+                      description: selectedTopic.description,
+                      classLevel: 9,
+                      subject: selectedTopic.subject || 'Syllabus Focus',
+                      readingTime: '10 mins',
+                      keyConcepts: [],
+                      sections: [],
+                      flashcards: selectedTopic.flashcards || []
+                    }}
+                    progress={progress}
+                    onRateCard={(cardId, rating) => {
+                      const existingStatus = progress.flashcardStatus && progress.flashcardStatus[cardId];
+                      onUpdateProgress({
+                        ...progress,
+                        totalXP: (progress.totalXP || 0) + (existingStatus ? 0 : 5),
+                        flashcardStatus: {
+                          ...(progress.flashcardStatus || {}),
+                          [cardId]: rating
+                        }
+                      });
+                    }}
+                    onOpenAI={(mode, context, customPrompt) => {
+                      alert(`Bharat AI: Analyzing concept context in detail... \n\nFocus Area: ${context}\n\nPrompt: ${customPrompt || 'Please explain.'}`);
+                    }}
+                  />
                 </div>
               )}
 

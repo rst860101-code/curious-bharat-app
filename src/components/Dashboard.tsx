@@ -35,6 +35,9 @@ import EditableText from './EditableText';
 import ScienceGames from './ScienceGames';
 import { translations } from '../lib/translations';
 import ThreeDElement from './ThreeDElement';
+import CommunityComments from './CommunityComments';
+import { getTenQuestions } from '../utils/quizGenerator';
+import FlashcardsView from './FlashcardsView';
 
 interface DashboardProps {
   courses: Course[];
@@ -926,7 +929,7 @@ export default function Dashboard({
                       { id: 'lecture', label: '🎥 Video Lecture' },
                       { id: 'notes', label: '📝 Study Notes' },
                       { id: 'quiz', label: '🎯 MCQ Quiz' },
-                      { id: 'flashcards', label: '⚡ Flashcards' },
+                      { id: 'flashcards', label: '🧠 Concept Mind Map' },
                       { id: 'dpp', label: '📂 DPP & PDF' }
                     ].map(tab => (
                       <button
@@ -984,46 +987,115 @@ export default function Dashboard({
                       <div className="space-y-6">
                         <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
                           <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                            Interactive Core Syllabus Theory
+                            📚 CONSOLIDATED STUDY VAULT & EXPERIMENTAL HUBS
                           </h3>
                         </div>
 
                         {selectedTopic.sections && selectedTopic.sections.length > 0 ? (
-                          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                            
-                            {/* Left Text Notes */}
-                            <div className="lg:col-span-7 space-y-6">
-                              {selectedTopic.sections.map((sec: any) => (
-                                <div key={sec.id} className="space-y-3 bg-zinc-900/20 border border-zinc-900 p-5 rounded-2xl">
-                                  <h4 className="text-sm font-bold text-white leading-normal">
-                                    {sec.title}
+                          <div className="space-y-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                              
+                              {/* Left Text Notes */}
+                              <div className="lg:col-span-7 space-y-6">
+                                {selectedTopic.sections.map((sec: any) => (
+                                  <div key={sec.id} className="space-y-3 bg-zinc-900/20 border border-zinc-900 p-5 rounded-2xl">
+                                    <h4 className="text-sm font-bold text-white leading-normal">
+                                      {sec.title}
+                                    </h4>
+                                    <p className="text-xs text-zinc-400 leading-relaxed whitespace-pre-line">
+                                      {sec.body}
+                                    </p>
+                                    {sec.keyPoints && sec.keyPoints.length > 0 && (
+                                      <div className="pt-2.5 space-y-1.5 border-t border-zinc-900">
+                                        <span className="text-[9px] uppercase tracking-wider font-bold text-zinc-500">Key Takeaways</span>
+                                        {sec.keyPoints.map((pt: string, idx: number) => (
+                                          <div key={idx} className="flex items-start gap-1.5 text-[11px] text-zinc-300">
+                                            <span className="text-zinc-500 font-bold font-mono mt-0.5">•</span>
+                                            <span>{pt}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+
+                                {/* Extra Downloadable Notes PDFs Section (Provide 2 more PDFs!) */}
+                                <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5 space-y-4">
+                                  <h4 className="text-xs font-extrabold uppercase tracking-widest text-orange-400 font-mono">
+                                    📂 DOWNLOAD EXTRA HIGH-VALUE STUDY MATERIAL (PDF)
                                   </h4>
-                                  <p className="text-xs text-zinc-400 leading-relaxed whitespace-pre-line">
-                                    {sec.body}
-                                  </p>
-                                  {sec.keyPoints && sec.keyPoints.length > 0 && (
-                                    <div className="pt-2.5 space-y-1.5 border-t border-zinc-900">
-                                      <span className="text-[9px] uppercase tracking-wider font-bold text-zinc-500">Key Takeaways</span>
-                                      {sec.keyPoints.map((pt: string, idx: number) => (
-                                        <div key={idx} className="flex items-start gap-1.5 text-[11px] text-zinc-300">
-                                          <span className="text-zinc-500 font-bold font-mono mt-0.5">•</span>
-                                          <span>{pt}</span>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <a
+                                      href="#"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        alert("Success! 'Advanced Formula Sheet & Concept Blueprint (PDF)' is downloaded for offline study.");
+                                      }}
+                                      className="flex items-center justify-between p-3 bg-zinc-900/30 hover:bg-zinc-900/80 border border-zinc-900 hover:border-zinc-700 rounded-xl transition cursor-pointer text-left"
+                                    >
+                                      <div className="flex items-center gap-2.5">
+                                        <div className="p-2 bg-orange-950/20 border border-orange-900/40 text-orange-400 rounded-lg">
+                                          <FileText className="w-4 h-4" />
                                         </div>
-                                      ))}
-                                    </div>
-                                  )}
+                                        <div>
+                                          <p className="text-xs font-bold text-white">Advanced Formula & Concept Guide</p>
+                                          <p className="text-[9px] text-zinc-500 font-mono">2.4 MB • Complete formulas</p>
+                                        </div>
+                                      </div>
+                                      <Download className="w-4 h-4 text-zinc-500" />
+                                    </a>
+
+                                    <a
+                                      href="#"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        alert("Success! 'NCERT Exemplar Solved Practice Notes (PDF)' is downloaded for offline study.");
+                                      }}
+                                      className="flex items-center justify-between p-3 bg-zinc-900/30 hover:bg-zinc-900/80 border border-zinc-900 hover:border-zinc-700 rounded-xl transition cursor-pointer text-left"
+                                    >
+                                      <div className="flex items-center gap-2.5">
+                                        <div className="p-2 bg-purple-950/20 border border-purple-900/40 text-purple-400 rounded-lg">
+                                          <FileText className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                          <p className="text-xs font-bold text-white">NCERT Exemplar Solved Practice</p>
+                                          <p className="text-[9px] text-zinc-500 font-mono">3.1 MB • Question bank</p>
+                                        </div>
+                                      </div>
+                                      <Download className="w-4 h-4 text-zinc-500" />
+                                    </a>
+                                  </div>
                                 </div>
-                              ))}
+                              </div>
+
+                              {/* Right Dynamic Live Interactive Simulation Widget */}
+                              <div className="lg:col-span-5 bg-zinc-900/40 p-5 rounded-2xl border border-zinc-850 h-fit space-y-4">
+                                <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block font-mono">
+                                  🔮 LIVE EXPERIMENTAL SIMULATOR
+                                </span>
+                                {renderSimulationWidget()}
+                              </div>
+
                             </div>
 
-                            {/* Right Dynamic Live Interactive Simulation Widget */}
-                            <div className="lg:col-span-5 bg-zinc-900/40 p-5 rounded-2xl border border-zinc-850 h-fit space-y-4">
-                              <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block font-mono">
-                                🔮 LIVE EXPERIMENTAL SIMULATOR
-                              </span>
-                              {renderSimulationWidget()}
+                            {/* Inline Comment Options in Study Notes Section */}
+                            <div className="border-t border-zinc-900 pt-6 mt-6">
+                              <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-5 space-y-4 shadow-xl">
+                                <div className="space-y-1">
+                                  <h4 className="text-sm font-black text-white uppercase tracking-tight font-mono">
+                                    💬 Study Note Doubts & Discussions
+                                  </h4>
+                                  <p className="text-xs text-zinc-500 leading-normal">
+                                    Discuss formulas, core concept questions, or leave comments on the study notes with peers.
+                                  </p>
+                                </div>
+                                <CommunityComments
+                                  lectureId={`${selectedTopic.id}-notes`}
+                                  studentName={studentName || "Anonymous Learner"}
+                                  isTeacher={studentName === 'Priyanshu'}
+                                />
+                              </div>
                             </div>
-
                           </div>
                         ) : (
                           <div className="text-xs text-zinc-500 text-center py-8">
@@ -1047,7 +1119,7 @@ export default function Dashboard({
 
                         {selectedTopic.quiz && selectedTopic.quiz.length > 0 ? (
                           (() => {
-                            const qList = selectedTopic.quiz;
+                            const qList = getTenQuestions(selectedTopic.quiz, selectedTopic.id, selectedTopic.title, selectedTopic.subject || '');
                             const isFinished = topicQuizIndex >= qList.length;
 
                             if (isFinished) {
@@ -1196,86 +1268,36 @@ export default function Dashboard({
                       </div>
                     )}
 
-                    {/* Tab 4: Memory Flashcards */}
+                    {/* Tab 4: Memory Flashcards (Rendered as Interactive Concept Mind Map) */}
                     {activeTopicTab === 'flashcards' && (
-                      <div className="space-y-4 max-w-sm mx-auto bg-zinc-900/20 border border-zinc-900 p-6 rounded-2xl">
-                        <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
-                          <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                            Active Recall Space-Repetition
-                          </h3>
-                          <span className="text-[10px] bg-zinc-900 px-2 py-0.5 rounded text-yellow-550 font-mono font-bold">
-                            +5 Coins / Review
-                          </span>
-                        </div>
-
-                        {selectedTopic.flashcards && selectedTopic.flashcards.length > 0 ? (
-                          (() => {
-                            const fcList = selectedTopic.flashcards;
-                            const activeFc = fcList[topicFcIndex];
-
-                            const handleRate = (right: boolean) => {
-                              playSound(right ? 'correct' : 'wrong');
-                              
-                              if (right) {
-                                onUpdateProgress({
-                                  ...progress,
-                                  totalXP: progress.totalXP + 5
-                                });
+                      <div className="w-full">
+                        <FlashcardsView
+                          embedded={true}
+                          chapter={selectedChapter || {
+                            id: selectedTopic.id,
+                            title: selectedTopic.title,
+                            description: selectedTopic.description,
+                            classLevel: 9,
+                            subject: selectedTopic.subject || 'Syllabus Focus',
+                            readingTime: '10 mins',
+                            keyConcepts: [],
+                            sections: [],
+                            flashcards: selectedTopic.flashcards || []
+                          }}
+                          progress={progress}
+                          onRateCard={(cardId, rating) => {
+                            const existingStatus = progress.flashcardStatus[cardId];
+                            onUpdateProgress({
+                              ...progress,
+                              totalXP: progress.totalXP + (existingStatus ? 0 : 5),
+                              flashcardStatus: {
+                                ...progress.flashcardStatus,
+                                [cardId]: rating
                               }
-
-                              setTopicFcFlipped(false);
-                              setTimeout(() => {
-                                setTopicFcIndex(prev => (prev + 1) % fcList.length);
-                              }, 200);
-                            };
-
-                            return (
-                              <div className="space-y-4">
-                                <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
-                                  <span>CARD {topicFcIndex + 1} OF {fcList.length}</span>
-                                  <span>Spaced Interval</span>
-                                </div>
-
-                                <div 
-                                  onClick={() => { playSound('click'); setTopicFcFlipped(!topicFcFlipped); }}
-                                  className="h-44 bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col justify-between items-center text-center cursor-pointer hover:border-zinc-500 transition-colors relative select-none"
-                                >
-                                  <div className="flex-1 flex items-center justify-center">
-                                    <p className="text-xs sm:text-sm font-bold text-white leading-relaxed">
-                                      {topicFcFlipped ? activeFc.back : activeFc.front}
-                                    </p>
-                                  </div>
-                                  <span className="text-[9px] uppercase font-bold tracking-widest text-zinc-500 font-mono">
-                                    {topicFcFlipped ? '✓ Answer' : '⚡ Click to Reveal Answer'}
-                                  </span>
-                                </div>
-
-                                {topicFcFlipped && (
-                                  <div className="grid grid-cols-2 gap-2 pt-2 animate-pulse">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRate(false)}
-                                      className="py-2 bg-zinc-900 border border-zinc-800 hover:border-rose-900/30 hover:text-rose-400 text-zinc-400 font-bold text-xs rounded-xl transition cursor-pointer"
-                                    >
-                                      Needs Review
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRate(true)}
-                                      className="py-2 bg-white text-black font-bold text-xs rounded-xl hover:bg-zinc-200 transition cursor-pointer"
-                                    >
-                                      Got it right! (+5)
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })()
-                        ) : (
-                          <div className="text-xs text-zinc-500 text-center py-8">
-                            Flashcards are being prepared for active recollection study.
-                          </div>
-                        )}
+                            });
+                          }}
+                          onOpenAI={onOpenAI}
+                        />
                       </div>
                     )}
 
