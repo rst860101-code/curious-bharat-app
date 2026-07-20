@@ -486,6 +486,18 @@ export default function BatchesTab({
                             <span>+15 XP Reward / Answer</span>
                           </div>
 
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                            {activeQ.examReference && (
+                              <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-lg">
+                                🏆 {activeQ.examReference}
+                              </span>
+                            )}
+                            {activeQ.weightage && (
+                              <span className="text-[10px] font-mono font-bold text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 px-2 py-0.5 rounded-lg">
+                                {activeQ.weightage}
+                              </span>
+                            )}
+                          </div>
                           <h4 className="text-xs sm:text-sm font-bold text-white leading-relaxed">
                             {activeQ.question}
                           </h4>

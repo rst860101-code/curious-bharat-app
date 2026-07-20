@@ -116,6 +116,19 @@ export default function Dashboard({
   const setSelectedTopic = propsSetSelectedTopic !== undefined ? propsSetSelectedTopic : setLocalSelectedTopic;
   const [activeTopicTab, setActiveTopicTab] = useState<'lecture' | 'notes' | 'quiz' | 'flashcards' | 'dpp'>('lecture');
 
+  // Synchronize locked course selection in useEffect to prevent render-phase state updates
+  React.useEffect(() => {
+    if (selectedCourse) {
+      const isCurrentCoursePaid = selectedCourse.isPaid;
+      const isCurrentUnlocked = !isCurrentCoursePaid || (progress.purchasedCourses || []).includes(selectedCourse.id);
+      if (!isCurrentUnlocked) {
+        setSelectedCourse(null);
+        setSelectedChapter(null);
+        setSelectedTopic(null);
+      }
+    }
+  }, [selectedCourse, progress.purchasedCourses, setSelectedCourse, setSelectedChapter, setSelectedTopic]);
+
   // File Download & Storage Permission States
   const [showStorageModal, setShowStorageModal] = useState(false);
   const [pendingUrl, setPendingUrl] = useState<string | null>(null);
@@ -844,9 +857,6 @@ export default function Dashboard({
           const isCurrentUnlocked = !isCurrentCoursePaid || (progress.purchasedCourses || []).includes(selectedCourse.id);
 
           if (!isCurrentUnlocked) {
-            setSelectedCourse(null);
-            setSelectedChapter(null);
-            setSelectedTopic(null);
             return null;
           }
 
@@ -1190,6 +1200,18 @@ export default function Dashboard({
                                   <span>Current Coins: <strong className="text-white">{progress.totalXP}</strong></span>
                                 </div>
 
+                                <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                                  {activeQ.examReference && (
+                                    <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-lg">
+                                      🏆 {activeQ.examReference}
+                                    </span>
+                                  )}
+                                  {activeQ.weightage && (
+                                    <span className="text-[10px] font-mono font-bold text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 px-2 py-0.5 rounded-lg">
+                                      {activeQ.weightage}
+                                    </span>
+                                  )}
+                                </div>
                                 <h4 className="text-xs sm:text-sm font-bold text-white leading-relaxed">
                                   {activeQ.question}
                                 </h4>

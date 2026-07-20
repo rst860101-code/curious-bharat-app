@@ -498,10 +498,84 @@ export default function AdminPortal({
   const selectedTopicObj = selectedChapterObj?.topics?.find(tp => tp.id === selectedTopicId);
 
   return (
-    <div className="bg-black border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-[720px] max-w-6xl mx-auto font-sans text-zinc-300">
+    <div className="bg-black border border-zinc-850 md:border-zinc-800 rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[92vh] md:h-[800px] max-w-6xl mx-auto font-sans text-zinc-300">
       
+      {/* MOBILE-ONLY TOP HEADER & NAVIGATION STRIP */}
+      <div className="md:hidden bg-zinc-950 border-b border-zinc-900 p-4 space-y-3 shrink-0">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Lock className="w-4 h-4 text-emerald-400" />
+            <h2 className="text-sm font-extrabold text-white">Bharat Admin Desk</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="px-3 py-1 bg-zinc-900 hover:bg-zinc-850 text-zinc-300 rounded-lg text-xs font-semibold cursor-pointer border border-zinc-800"
+          >
+            Exit Portal
+          </button>
+        </div>
+
+        {/* Horizontal scrollable tab buttons */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          <button
+            type="button"
+            onClick={() => { playSound('click'); setActiveSubTab('courses'); }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shrink-0 ${
+              activeSubTab === 'courses' ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-400'
+            }`}
+          >
+            📁 Courses & Chapters
+          </button>
+          <button
+            type="button"
+            onClick={() => { playSound('click'); setActiveSubTab('student-analysis'); }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shrink-0 ${
+              activeSubTab === 'student-analysis' ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-400'
+            }`}
+          >
+            📊 Students
+          </button>
+          <button
+            type="button"
+            onClick={() => { playSound('click'); setActiveSubTab('apk-releases'); }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shrink-0 ${
+              activeSubTab === 'apk-releases' ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-400'
+            }`}
+          >
+            🤖 APK Release
+          </button>
+          <button
+            type="button"
+            onClick={() => { playSound('click'); setActiveSubTab('owner-profile'); }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shrink-0 ${
+              activeSubTab === 'owner-profile' ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-400'
+            }`}
+          >
+            ⚙️ Ecosystem
+          </button>
+        </div>
+
+        {/* Mobile Inline Editor state toggle bar */}
+        <div className="flex items-center justify-between bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-850">
+          <div className="space-y-0.5">
+            <span className="text-[10px] text-zinc-400 font-bold flex items-center gap-1">
+              <Eye className="w-3.5 h-3.5 text-zinc-500" /> Inline Live Editor
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => { playSound('click'); onToggleLiveEditing(); }}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition active:scale-95 ${
+              isLiveEditing ? 'bg-emerald-500 text-zinc-950 font-extrabold' : 'bg-zinc-850 text-zinc-400 border border-zinc-800'
+            }`}
+          >
+            {isLiveEditing ? 'ACTIVE' : 'DISABLED'}
+          </button>
+        </div>
+      </div>
+
       {/* LEFT COLUMN: Google AI Studio Styled Control Column */}
-      <div className="w-full md:w-[320px] bg-zinc-950 border-r border-zinc-800 p-5 flex flex-col justify-between shrink-0 h-full overflow-y-auto no-scrollbar">
+      <div className="hidden md:flex w-full md:w-[320px] bg-zinc-950 border-r border-zinc-800 p-5 flex-col justify-between shrink-0 h-full overflow-y-auto no-scrollbar">
         <div className="space-y-6">
           {/* Admin Header */}
           <div className="space-y-1">

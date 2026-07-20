@@ -34,7 +34,9 @@ import {
   AlertCircle,
   BookOpen,
   Sparkles,
-  Brain
+  Brain,
+  Mic,
+  MessageSquare
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Course, UserProgress } from '../types';
@@ -55,6 +57,8 @@ interface ProfileHubProps {
   onLanguageChange?: (val: 'en' | 'hi') => void;
   isDarkMode?: boolean;
   onDarkModeChange?: (val: boolean) => void;
+  feedbacksList?: any[];
+  onAddFeedback?: (cat: string, text: string) => void;
 }
 
 export default function ProfileHub({ 
@@ -68,7 +72,9 @@ export default function ProfileHub({
   appLanguage = 'en',
   onLanguageChange,
   isDarkMode = true,
-  onDarkModeChange
+  onDarkModeChange,
+  feedbacksList = [],
+  onAddFeedback
 }: ProfileHubProps) {
   const t = translations[appLanguage];
 
@@ -78,6 +84,12 @@ export default function ProfileHub({
   const [school, setSchool] = useState(progress.studentSchool || 'CBSE Public School, Delhi');
   const [profilePic, setProfilePic] = useState(progress.profilePic || '');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  // Local student feedback form state
+  const [localFeedbackCat, setLocalFeedbackCat] = useState('Feature Suggestion');
+  const [localFeedbackText, setLocalFeedbackText] = useState('');
+  const [localRecording, setLocalRecording] = useState(false);
+  const [feedbackSuccessMsg, setFeedbackSuccessMsg] = useState('');
 
   // Referral Wallet State
   const [referralBalance, setReferralBalance] = useState(0);
@@ -808,6 +820,166 @@ export default function ProfileHub({
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* =======================================================
+          STUDENT VOICE: FEEDBACK & FEATURE SUGGESTIONS
+          ======================================================= */}
+      <div className="bg-zinc-950 border border-zinc-900 rounded-3xl p-6 space-y-5">
+        <div className="flex justify-between items-center border-b border-zinc-900 pb-2">
+          <h4 className="text-xs font-extrabold uppercase tracking-widest text-zinc-400 font-mono flex items-center gap-1.5">
+            <MessageSquare className="w-4 h-4 text-emerald-400" />
+            Student Voice: Feedback & suggestions
+          </h4>
+          <span className="text-[10px] font-mono text-emerald-500 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/10">
+            Active Channel
+          </span>
+        </div>
+
+        <div className="space-y-4 text-xs">
+          <p className="text-zinc-400 leading-relaxed">
+            Have an idea to make Bharat AI better? Or found a bug? Post it directly to our administration desk. Your voice dictates the weekly updates!
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Feedback Category</label>
+              <select
+                value={localFeedbackCat}
+                onChange={(e) => setLocalFeedbackCat(e.target.value)}
+                className="w-full bg-zinc-900 border border-zinc-850 rounded-xl py-2.5 px-3 text-xs text-white outline-none focus:border-zinc-500"
+              >
+                <option value="Feature Suggestion">💡 Feature Suggestion</option>
+                <option value="Academic Request">🔬 Course or Syllabus Request</option>
+                <option value="Bug Report">🐛 Bug Report</option>
+                <option value="General Feedback">📝 General Feedback</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Language Inclusivity</label>
+              <div className="bg-zinc-900/60 border border-zinc-850 p-2.5 rounded-xl text-[10px] text-zinc-500 font-sans leading-normal">
+                ✍️ <strong className="text-zinc-400">Write/Speak anything:</strong> Bhojpuri, English, Hindi, Hinglish, etc. Bharat AI analyzes content depth, never language grammar!
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-center">
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Your Suggestion or Problem details</label>
+              <button
+                type="button"
+                onClick={() => {
+                  if (localRecording) return;
+                  playSound('click');
+                  setLocalRecording(true);
+                  setLocalFeedbackText("Listening... speak now in Hindi/English/Bhojpuri...");
+                  
+                  // Bilingual simulation sequences of students
+                  const studentVoices = [
+                    "Sir, Class 10th Electricity me real-life curiosity-driven physical analogies badhaiye, thode tough numerical board exam pattern questions add kijiye.",
+                    "Hum Bhojpuri me bolat bani, humra ke is platform pe offline test notes download kare ke pure options provide kijiye.",
+                    "Bharat AI test reviews is excellent but make it more harsh and critical for wrong answer analyses so we learn properly!",
+                    "Please add a live inline color grading and text sizing customization directly in our educator portal draft cards."
+                  ];
+
+                  const randomPhrase = studentVoices[Math.floor(Math.random() * studentVoices.length)];
+
+                  setTimeout(() => {
+                    setLocalFeedbackText(randomPhrase);
+                    setLocalRecording(false);
+                    playSound('success');
+                  }, 2200);
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-bold transition active:scale-95 cursor-pointer ${
+                  localRecording 
+                    ? 'bg-red-500/10 text-red-400 border-red-500/30 animate-pulse' 
+                    : 'bg-zinc-900 hover:bg-zinc-850 text-zinc-400 hover:text-white border-zinc-850'
+                }`}
+              >
+                <Mic className="w-3 h-3 text-red-500" />
+                <span>{localRecording ? 'Recording...' : 'Simulate Voice Typing'}</span>
+              </button>
+            </div>
+            
+            <textarea
+              placeholder="Type your feedback here or click 'Simulate Voice Typing' to speak in Hindi/English/Bhojpuri..."
+              rows={3}
+              value={localFeedbackText}
+              onChange={(e) => setLocalFeedbackText(e.target.value)}
+              className="w-full bg-zinc-900 border border-zinc-850 rounded-xl p-3 text-xs text-white outline-none focus:border-zinc-500 leading-relaxed font-sans placeholder-zinc-600 resize-none"
+            />
+          </div>
+
+          {feedbackSuccessMsg && (
+            <p className="p-2.5 bg-emerald-950/20 border border-emerald-900/40 rounded-xl text-[11px] text-emerald-400 font-bold text-center animate-bounce">
+              {feedbackSuccessMsg}
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              if (!localFeedbackText.trim() || localFeedbackText.startsWith("Listening...")) return;
+              playSound('click');
+              if (onAddFeedback) {
+                onAddFeedback(localFeedbackCat, localFeedbackText);
+              } else {
+                // local fallback if props didn't link
+                const newFb = {
+                  id: `fb-${Date.now()}`,
+                  category: localFeedbackCat,
+                  text: localFeedbackText,
+                  date: new Date().toISOString(),
+                  status: 'Under Active Review'
+                };
+                const saved = localStorage.getItem('bharat_student_feedbacks');
+                const list = saved ? JSON.parse(saved) : [];
+                localStorage.setItem('bharat_student_feedbacks', JSON.stringify([newFb, ...list]));
+              }
+              setLocalFeedbackText('');
+              setFeedbackSuccessMsg('✨ Jai Hind! Your feedback has been logged and queued for Priyanshu Admin review.');
+              setTimeout(() => setFeedbackSuccessMsg(''), 4500);
+            }}
+            disabled={!localFeedbackText.trim() || localRecording}
+            className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 text-zinc-950 font-extrabold rounded-xl text-xs transition cursor-pointer shadow-lg shadow-emerald-950/20"
+          >
+            Submit Suggestion to Educator Desk
+          </button>
+
+          {/* List of previously sent logs */}
+          <div className="space-y-1.5 pt-1 border-t border-zinc-900/40">
+            <span className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest block">Your feedback log</span>
+            <div className="space-y-1.5 max-h-36 overflow-y-auto">
+              {(feedbacksList && feedbacksList.length > 0 ? feedbacksList : [
+                {
+                  id: 'fb-init-1',
+                  category: 'Feature Suggestion',
+                  text: 'Sir, Class 10th Electricity me real-life curiosity-driven physical analogies badhaiye, thode tough numerical boards level questions add kijiye.',
+                  date: '2026-07-20T10:00:00.000Z',
+                  status: 'Under Active Review'
+                }
+              ]).map((fb: any) => (
+                <div key={fb.id} className="p-3 bg-zinc-900/30 border border-zinc-900 rounded-xl space-y-1">
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="font-mono font-bold text-zinc-400 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-850">
+                      {fb.category}
+                    </span>
+                    <span className="text-zinc-500 font-mono text-[9px]">
+                      {new Date(fb.date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-zinc-300 font-sans leading-normal pr-1">{fb.text}</p>
+                  <div className="flex items-center gap-1.5 text-[9px] text-emerald-400 font-bold font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Status: Pending Review by Admin</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       </div>
 

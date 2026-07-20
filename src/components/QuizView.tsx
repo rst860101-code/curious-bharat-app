@@ -106,9 +106,21 @@ export default function QuizView({ chapter, onBack, onCompleteQuiz, onOpenAI }: 
 
             {/* Question */}
             <div className="space-y-3">
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-white bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800">
-                <HelpCircle className="w-3.5 h-3.5" /> Core Assessment Query
-              </span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-white bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800">
+                  <HelpCircle className="w-3.5 h-3.5" /> Core Assessment Query
+                </span>
+                {currentQuestion.examReference && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-lg">
+                    🏆 {currentQuestion.examReference}
+                  </span>
+                )}
+                {currentQuestion.weightage && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 px-2 py-0.5 rounded-lg">
+                    {currentQuestion.weightage}
+                  </span>
+                )}
+              </div>
               <h2 className="text-base sm:text-lg font-bold text-white leading-relaxed">
                 {currentQuestion.question}
               </h2>

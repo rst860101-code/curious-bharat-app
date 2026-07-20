@@ -28,7 +28,9 @@ import {
   X,
   ArrowRight,
   Phone,
-  Mail
+  Mail,
+  MessageSquare,
+  Mic
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { defaultCourses, defaultCustomization } from './data/defaultCourses';
@@ -368,6 +370,9 @@ export default function App() {
   const [customization, setCustomization] = useState<AppCustomization>(defaultCustomization);
   const [isLiveEditing, setIsLiveEditing] = useState<boolean>(false);
 
+  // Student Feedback modal state
+  const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
+
   // Admin login dialog states
   const [showAdminLoginModal, setShowAdminLoginModal] = useState<boolean>(false);
   const [adminUsername, setAdminUsername] = useState('');
@@ -375,6 +380,40 @@ export default function App() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggedInAdmin, setIsLoggedInAdmin] = useState<boolean>(false);
   const [scrollY, setScrollY] = useState(0);
+
+  // Student Feedback & Feature Suggestions System
+  const [feedbackCategory, setFeedbackCategory] = useState<string>('Feature Suggestion');
+  const [feedbackText, setFeedbackText] = useState<string>('');
+  const [isFeedbackRecording, setIsFeedbackRecording] = useState<boolean>(false);
+  const [feedbacksList, setFeedbacksList] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('bharat_student_feedbacks');
+      return saved ? JSON.parse(saved) : [
+        {
+          id: 'fb-init-1',
+          category: 'Feature Suggestion',
+          text: 'Sir, Class 10th Electricity me real-life curiosity-driven physical analogies badhaiye, thode tough numerical boards level questions add kijiye.',
+          date: '2026-07-20T10:00:00.000Z',
+          status: 'Under Active Review'
+        }
+      ];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleAddFeedback = (cat: string, text: string) => {
+    const newFb = {
+      id: `fb-${Date.now()}`,
+      category: cat,
+      text: text,
+      date: new Date().toISOString(),
+      status: 'Under Active Review'
+    };
+    const updated = [newFb, ...feedbacksList];
+    setFeedbacksList(updated);
+    localStorage.setItem('bharat_student_feedbacks', JSON.stringify(updated));
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -696,6 +735,19 @@ export default function App() {
           {/* Quick study widgets */}
           <div className="flex items-center gap-3 sm:gap-4">
             
+            {/* Feedback & Suggestion Button */}
+            <button
+              onClick={() => {
+                playSound('click');
+                setShowFeedbackModal(true);
+              }}
+              title="Feedback & Feature Suggestions by Students"
+              className="px-3 py-1.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 text-zinc-300 hover:text-white rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Feedback</span>
+            </button>
+            
             {/* List icon menu dropdown feature */}
             <div className="relative">
               <button
@@ -956,6 +1008,8 @@ export default function App() {
                   onLanguageChange={handleLanguageChange}
                   isDarkMode={isDarkMode}
                   onDarkModeChange={handleDarkModeChange}
+                  feedbacksList={feedbacksList}
+                  onAddFeedback={handleAddFeedback}
                 />
               )}
             </motion.div>
@@ -1141,6 +1195,135 @@ export default function App() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Global Student Feedback & Feature Suggestion Dialog */}
+      <AnimatePresence>
+        {showFeedbackModal && (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, y: 15, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 15, scale: 0.98 }}
+              className="bg-zinc-950 border border-zinc-900 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+            >
+              {/* Header */}
+              <div className="p-5 border-b border-zinc-900 flex justify-between items-center bg-zinc-900/20">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8.5 h-8.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <MessageSquare className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white">Student Feedback Desk</h3>
+                    <p className="text-[10px] text-zinc-500 font-medium">Bilingual & Language-Agnostic Channel</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    playSound('click');
+                    setShowFeedbackModal(false);
+                    setFeedbackText('');
+                  }}
+                  className="w-7 h-7 rounded-lg hover:bg-zinc-900 text-zinc-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Scrollable Form Body */}
+              <div className="p-5 overflow-y-auto space-y-4 text-xs">
+                <p className="text-zinc-400 leading-relaxed">
+                  Post features suggestion, course requests, or bug reports. Write or voice-record in <strong className="text-white">Bhojpuri, English, Hindi, or Hinglish</strong> — we prioritize physical concepts, clarity, and curiosity over grammar.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Feedback Category</label>
+                    <select
+                      value={feedbackCategory}
+                      onChange={(e) => setFeedbackCategory(e.target.value)}
+                      className="w-full bg-zinc-900 border border-zinc-850 rounded-xl py-2.5 px-3 text-xs text-white outline-none focus:border-zinc-500"
+                    >
+                      <option value="Feature Suggestion">💡 Feature Suggestion</option>
+                      <option value="Academic Request">🔬 Course or Syllabus Request</option>
+                      <option value="Bug Report">🐛 Bug Report</option>
+                      <option value="General Feedback">📝 General Feedback</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Language Inclusivity</label>
+                    <div className="bg-zinc-900/60 border border-zinc-850 p-2 rounded-xl text-[9px] text-zinc-500 leading-normal">
+                      We analyze content depth. Regional mixture is 100% fine!
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Your message</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isFeedbackRecording) return;
+                        playSound('click');
+                        setIsFeedbackRecording(true);
+                        setFeedbackText("Listening... speak now in Hindi/English/Bhojpuri...");
+                        
+                        const phrases = [
+                          "Sir, please add speed control (.25x, 1.5x, 2x) and download quality settings in video lecture panel.",
+                          "Class 10th Optics and Light refraction me mind maps compile karke PDF support de dijiye notes section me.",
+                          "Hum Bhojpuri me bolat bani, humra ke is platform pe offline test notes download kare ke pure options provide kijiye.",
+                          "Bharat AI evaluation me negative feedback tough kijiye, humein strict boards pattern validation chahiye!"
+                        ];
+
+                        const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+
+                        setTimeout(() => {
+                          setFeedbackText(randomPhrase);
+                          setIsFeedbackRecording(false);
+                          playSound('success');
+                        }, 2200);
+                      }}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-bold transition active:scale-95 cursor-pointer ${
+                        isFeedbackRecording 
+                          ? 'bg-red-500/10 text-red-400 border-red-500/30 animate-pulse' 
+                          : 'bg-zinc-900 hover:bg-zinc-850 text-zinc-400 hover:text-white border-zinc-850'
+                      }`}
+                    >
+                      <Mic className="w-3 h-3 text-red-500" />
+                      <span>{isFeedbackRecording ? 'Recording...' : 'Simulate Voice Input'}</span>
+                    </button>
+                  </div>
+                  
+                  <textarea
+                    placeholder="Speak or type in Hindi, Bhojpuri, or English..."
+                    rows={4}
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-850 rounded-xl p-3 text-xs text-white outline-none focus:border-zinc-500 leading-relaxed font-sans placeholder-zinc-600 resize-none"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!feedbackText.trim() || feedbackText.startsWith("Listening...")) return;
+                    playSound('click');
+                    handleAddFeedback(feedbackCategory, feedbackText);
+                    setFeedbackText('');
+                    setShowFeedbackModal(false);
+                    alert("✨ Jai Hind! Your feedback has been queued and logged for Priyanshu Admin's active review.");
+                  }}
+                  disabled={!feedbackText.trim() || isFeedbackRecording}
+                  className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-35 text-zinc-950 font-extrabold rounded-xl text-xs transition cursor-pointer shadow-lg shadow-emerald-950/20"
+                >
+                  Submit Suggestions to Administration
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

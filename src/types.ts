@@ -11,6 +11,8 @@ export interface QuizQuestion {
   options: string[];
   correctAnswerIndex: number;
   explanation: string;
+  examReference?: string;
+  weightage?: string;
 }
 
 export interface ChapterSection {
